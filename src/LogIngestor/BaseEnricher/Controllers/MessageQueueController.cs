@@ -40,7 +40,14 @@ namespace BaseEnricher.Controllers
                     AgentHostName = "myclient.test.local"
                 }
             };
-            messageProducer.Configure(Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME));
+            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME);
+
+            if (hostname == null)
+            {
+                _logger.LogError("API: can't retrieve hostname of queue broker from env variable");
+                return BadRequest("API: can't retrieve hostname of queue broker from env variable");
+            }
+            messageProducer.Configure(hostname);
             messageProducer.WriteToQueue(QueueNames.QUEUE_BASE_MESSAGE_READ, logMessage);
             return Ok(message);
         }
@@ -55,12 +62,19 @@ namespace BaseEnricher.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> SubscribeToChannel()
+        public IActionResult SubscribeToChannel()
         {
-            var messageConsumer2 = _serviceProvider.GetRequiredService<IMessageConsumer<BaseLogMessage>>();
-            messageConsumer2.Configure(Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_OUT_HOSTNAME));
+            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_OUT_HOSTNAME);
+            if (hostname == null)
+            {
+                _logger.LogError("API: can't retrieve hostname of queue broker from env variable");
+                return BadRequest("API: can't retrieve hostname of queue broker from env variable");
+            }
 
-            await messageConsumer2.SubscribeAsync(QueueNames.QUEUE_BASE_MESSAGE_READ);
+            var messageConsumer2 = _serviceProvider.GetRequiredService<IMessageConsumer<BaseLogMessage>>();
+            messageConsumer2.Configure(hostname);
+
+            messageConsumer2.Subscribe(QueueNames.QUEUE_BASE_MESSAGE_READ);
             messageConsumer2.OnMessageReceived += Execute;
 
             return Ok($"API: Started subscription to topic {QueueNames.QUEUE_BASE_MESSAGE_READ}");

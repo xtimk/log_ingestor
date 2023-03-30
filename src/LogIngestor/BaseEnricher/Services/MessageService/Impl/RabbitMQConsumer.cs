@@ -13,16 +13,13 @@ namespace BaseEnricher.Services.MessageService.Impl
     public class RabbitMQConsumer<T> : IMessageConsumer<T> where T : Message
     {
         private readonly ILogger<RabbitMQConsumer<T>> _logger;
-        //private readonly IMessageBrokerConfiguration _messageBrokerConfiguration;
         private string? _hostname;
 
-        //public event AsyncEventHandler<BasicDeliverEventArgs> OnMessageReceived;
-        public event EventHandler<T> OnMessageReceived;
+        public event EventHandler<T>? OnMessageReceived;
 
         public RabbitMQConsumer(ILogger<RabbitMQConsumer<T>> logger)
         {
             _logger = logger;
-            //_messageBrokerConfiguration = messageBrokerConfiguration;
         }
 
         public void Configure(string hostname)
@@ -30,17 +27,16 @@ namespace BaseEnricher.Services.MessageService.Impl
             _hostname = hostname;
         }
 
-        public async Task SubscribeAsync(string topic)
+        public void Subscribe(string topic)
         {
             if (_hostname == null)
             {
-                //_logger.LogError($"{base}Can't write to {topic}. You have to call method Configure first.");
                 throw new ArgumentNullException("You have to call Configure method prior to subscribing to a topic", nameof(_hostname));
             }
 
             var baseLogMessage = $"RabbitMQ Consumer[{Guid.NewGuid()}]: ";
 
-            var _factory = new ConnectionFactory() { HostName = _hostname, DispatchConsumersAsync = true };
+            var _factory = new ConnectionFactory() { HostName = _hostname, DispatchConsumersAsync = false };
             IConnection connection = _factory.CreateConnection();
             IModel channel = connection.CreateModel();
             channel.QueueDeclare(queue: topic, durable: false, exclusive: false, autoDelete: false, arguments: null);
@@ -48,12 +44,12 @@ namespace BaseEnricher.Services.MessageService.Impl
             // Don't dispatch a new message to a consumer until it has processed and acknowledged the previous one.
             channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
-            var consumer = new AsyncEventingBasicConsumer(channel); // non-blocking
-            consumer.Registered += async (model, body) =>
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Registered += (model, body) =>
             {
                 _logger.LogInformation($"{baseLogMessage}A new subscriber has been detected.");
             };
-            consumer.Received += async (model, body) =>
+            consumer.Received += (model, body) =>
             {
                 try
                 {
@@ -63,15 +59,18 @@ namespace BaseEnricher.Services.MessageService.Impl
                     var deserializedMessage = JsonSerializer.Deserialize<T>(message);
                     //await OnMessageReceived.Invoke(model, body);
 
-                    if(deserializedMessage != null)
-                    {
-                        OnMessageReceived.Invoke(model, deserializedMessage);
-                    }
-                    else
+                    if(deserializedMessage == null)
                     {
                         // exception throw here...
                         _logger.LogError($"{baseLogMessage}Error, deserialization of message produced null.");
+                        throw new Exception();
                     }
+                    if(OnMessageReceived == null)
+                    {
+                        _logger.LogError($"{baseLogMessage}Error, can't invoke event, is null.");
+                        throw new Exception();
+                    }
+                    OnMessageReceived.Invoke(model, deserializedMessage);
                     channel.BasicAck(body.DeliveryTag, false);
                 }
                 catch (AlreadyClosedException ex)
@@ -90,7 +89,7 @@ namespace BaseEnricher.Services.MessageService.Impl
 
             // Register a consumer to listen to a specific queue. 
             channel.BasicConsume(queue: topic, autoAck: false, consumer: consumer);
-            await Task.CompletedTask;
+            //await Task.CompletedTask;
         }
     }
 }

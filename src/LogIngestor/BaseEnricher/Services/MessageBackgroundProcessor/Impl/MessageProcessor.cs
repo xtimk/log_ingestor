@@ -11,8 +11,8 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
     {
         private readonly ILogger<MessageProcessor> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private string _hostname;
-        private string _topic;
+        private string? _hostname;
+        private string? _topic;
         private int _readedEvents;
         private Guid _consumer_guid;
         private string _baseLogMessage;
@@ -54,13 +54,17 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             stoppingToken.ThrowIfCancellationRequested();
+            if(_hostname== null || _topic == null) {
+                _logger.LogError($"{_baseLogMessage}Error, service not correctly called.");
+                return;
+            }
 
             using IServiceScope scope = _serviceProvider.CreateScope();
 
             var messageConsumer = scope.ServiceProvider.GetRequiredService<IMessageConsumer<BaseLogMessage>>();
             messageConsumer.Configure(_hostname);
 
-            await messageConsumer.SubscribeAsync(_topic);
+            messageConsumer.Subscribe(_topic);
 
             messageConsumer.OnMessageReceived += ExecuteAction;
 
@@ -76,19 +80,16 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
                 _logger.LogDebug($"{_baseLogMessage}Add date to message: {message}");
                 
                 var enrichedMessage = addDateCommand.Execute(message);
-
+                if (_hostname == null)
+                    throw new ArgumentNullException(nameof(_hostname));
                 messageProducer.Configure(_hostname);
                 messageProducer.WriteToQueue(QueueNames.QUEUE_ENRICHED_MESSAGE_WRITE, enrichedMessage);
 
                 _readedEvents++;
             }
-            //catch (MessageProcessorException ex)
-            //{
-            //    _logger.LogError($"{_baseLogMessage}Error processing message. Message: {message}", ex);
-            //}
-            catch (JsonException ex)
+            catch (Exception ex)
             {
-                _logger.LogError($"{_baseLogMessage}Error parsing json. Message: {message}", ex);
+                _logger.LogError($"{_baseLogMessage}Error while processing message: {message}", ex);
             }
         }
     }

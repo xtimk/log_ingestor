@@ -5,7 +5,7 @@ namespace BaseEnricher.Services.MessageService
 {
     public interface IMessageConsumer<T>
     {
-        Task SubscribeAsync(string topic);
+        void Subscribe(string topic);
         void Configure(string hostname);
 
         event EventHandler<T> OnMessageReceived;
