@@ -7,8 +7,10 @@ services:
       context: .
       dockerfile: BaseEnricher/Dockerfile
     environment:
-      - QueueIn=rabbitmq.allinone.local
-      - QueueOut=rabbitmq.allinone.local
+      - InBrokerHostname=rabbitmq.allinone.local
+      - InBrokerTopic=base_message_queue
+      - OutBrokerHostname=rabbitmq.allinone.local
+      - OutBrokerTopi=enriched_message_queue
     depends_on:
       - "rabbitmq.allinone.local"
 

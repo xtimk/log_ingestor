@@ -10,8 +10,12 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
     {
         private readonly ILogger<MessageProcessor> _logger;
         private readonly IServiceProvider _serviceProvider;
-        private string? _hostname;
-        private string? _topic;
+
+        private string? _in_broker_hostname;
+        private string? _in_broker_topic;
+        private string? _out_broker_hostname;
+        private string? _out_broker_topic;
+
         private int _readedEvents;
         private Guid _consumer_guid;
         private string _baseLogMessage;
@@ -26,12 +30,21 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
             _logger.LogInformation($"{_baseLogMessage}Message processor created. Unique id: {_consumer_guid}");
         }
 
-        public void Configure(string host, string topic)
+        public void Configure(string in_broker_host, string in_broker_topic, string out_broker_host, string out_broker_topic)
         {
-            _hostname = host;
-            _topic = topic;
-            _logger.LogInformation($"{_baseLogMessage}Configured. Remote queue host: {_hostname}. Queue channel to be consumed: {_topic}");
+            _in_broker_hostname= in_broker_host;
+            _in_broker_topic= in_broker_topic;
+            _out_broker_hostname= out_broker_host;
+            _out_broker_topic= out_broker_topic;
+            _logger.LogInformation($"{_baseLogMessage}Configured. Input from broker: {_in_broker_hostname}, topic {_in_broker_topic}. Output to broker: {_out_broker_hostname}, topic {_out_broker_topic}");
         }
+
+        //public void Configure(string host, string topic)
+        //{
+        //    _hostname = host;
+        //    _topic = topic;
+        //    _logger.LogInformation($"{_baseLogMessage}Configured. Remote queue host: {_hostname}. Queue channel to be consumed: {_topic}");
+        //}
 
         public int NumberOfEventsReaded()
         {
@@ -53,7 +66,7 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             stoppingToken.ThrowIfCancellationRequested();
-            if(_hostname== null || _topic == null) {
+            if(_in_broker_hostname == null || _in_broker_topic == null || _out_broker_hostname == null || _out_broker_topic == null) {
                 _logger.LogError($"{_baseLogMessage}Error, service not correctly called.");
                 return;
             }
@@ -61,9 +74,9 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
             using IServiceScope scope = _serviceProvider.CreateScope();
 
             var messageConsumer = scope.ServiceProvider.GetRequiredService<IMessageConsumer<BaseLogMessage>>();
-            messageConsumer.Configure(_hostname);
+            messageConsumer.Configure(_in_broker_hostname);
 
-            messageConsumer.Subscribe(_topic);
+            messageConsumer.Subscribe(_in_broker_topic);
 
             messageConsumer.OnMessageReceived += ExecuteAction;
 
@@ -72,6 +85,11 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
         private void ExecuteAction(object? obj, BaseLogMessage message)
         {
             using IServiceScope scope = _serviceProvider.CreateScope();
+            if (_in_broker_hostname == null || _in_broker_topic == null || _out_broker_hostname == null || _out_broker_topic == null)
+            {
+                _logger.LogError($"{_baseLogMessage}Error, service not correctly called.");
+                return;
+            }
             var messageProducer = scope.ServiceProvider.GetRequiredService<IMessageProducer<EnrichedLogMessage>>();
             try
             {
@@ -79,10 +97,10 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
                 _logger.LogDebug($"{_baseLogMessage}Add date to message: {message}");
                 
                 var enrichedMessage = addDateCommand.Execute(message);
-                if (_hostname == null)
-                    throw new ArgumentNullException(nameof(_hostname));
-                messageProducer.Configure(_hostname);
-                messageProducer.WriteToQueue(QueueNames.QUEUE_ENRICHED_MESSAGE_WRITE, enrichedMessage);
+                if (_out_broker_hostname == null)
+                    throw new ArgumentNullException(nameof(_out_broker_hostname));
+                messageProducer.Configure(_out_broker_hostname);
+                messageProducer.WriteToQueue(_out_broker_topic, enrichedMessage);
 
                 _readedEvents++;
             }

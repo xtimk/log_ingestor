@@ -1,4 +1,5 @@
 using BaseEnricher.Constants;
+using BaseEnricher.Exceptions;
 using BaseEnricher.Services.MessageBackgroundProcessor;
 using BaseEnricher.Services.MessageService;
 using BaseEnricher.Services.MessageService.Impl;
@@ -66,14 +67,28 @@ namespace BaseEnricher
         {
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
             var messageProcessor = app.Services.GetRequiredService<IMessageProcessorBackground>();
-            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME);
-            var topic = QueueNames.QUEUE_BASE_MESSAGE_READ;
-            if (hostname == null)
+            var in_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_HOSTNAME);
+            var in_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_TOPIC);
+            var out_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_HOSTNAME);
+            var out_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_TOPIC);
+
+            if(in_broker_hostname == null)
             {
-                logger.LogCritical("RabbitMQ instance not found as env variable.");
-                throw new MissingFieldException(nameof(hostname));
+                throw new ConfigurationException(nameof(in_broker_hostname));
             }
-            messageProcessor.Configure(hostname, topic);
+            if(in_broker_topic == null)
+            {
+                throw new ConfigurationException(nameof(in_broker_topic));
+            }
+            if(out_broker_hostname == null)
+            {
+                throw new ConfigurationException(nameof(out_broker_hostname));
+            }
+            if(out_broker_topic == null)
+            {
+                throw new ConfigurationException(nameof(out_broker_topic));
+            }
+            messageProcessor.Configure(in_broker_hostname, in_broker_topic, out_broker_hostname, out_broker_topic);
         }
     }
 }

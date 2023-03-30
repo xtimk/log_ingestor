@@ -38,8 +38,8 @@ namespace BaseEnricher.Controllers
                     AgentHostName = "myclient.test.local"
                 }
             };
-            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME);
-
+            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_HOSTNAME);
+            
             if (hostname == null)
             {
                 _logger.LogError("API: can't retrieve hostname of queue broker from env variable");
@@ -62,7 +62,7 @@ namespace BaseEnricher.Controllers
         [HttpGet]
         public IActionResult SubscribeToChannel()
         {
-            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_OUT_HOSTNAME);
+            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_HOSTNAME);
             if (hostname == null)
             {
                 _logger.LogError("API: can't retrieve hostname of queue broker from env variable");
