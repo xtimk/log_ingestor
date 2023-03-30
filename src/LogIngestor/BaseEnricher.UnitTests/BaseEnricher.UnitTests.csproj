@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LogIngestor\BaseEnricher\BaseEnricher.csproj" />
+    <ProjectReference Include="..\BaseEnricher\BaseEnricher.csproj" />
   </ItemGroup>
 
 </Project>
