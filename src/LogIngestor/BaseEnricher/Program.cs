@@ -18,7 +18,7 @@ namespace BaseEnricher
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
+            // Add serilog
             var logger = new LoggerConfiguration()
               .ReadFrom.Configuration(builder.Configuration)
               .Enrich.FromLogContext()
@@ -31,27 +31,24 @@ namespace BaseEnricher
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            // adjust here, dont use generics, the serialization must be taken outside rabbitmq implementation..
+            // Add classes to use to pub/sub from external queues
             builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
-            builder.Services.AddSingleton<IMessageConsumer, RabbitMQConsumer>();
-            
-            //builder.Services.AddSingleton(typeof(IMessageProcessorBackground<>), typeof(MessageProcessor<>));
-            builder.Services.AddSingleton<IMessageProcessorBackground, MessageProcessor>();
+            builder.Services.AddSingleton(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
 
-            builder.Services.AddSingleton<IMessageProcessor<BaseLogMessage>, MessageEnricherProcessor>();
-            
+            // Add service that processes messages, adding information
+            //builder.Services.AddSingleton<IMessageProcessor<BaseLogMessage>, MessageEnricherProcessor>();
 
+            // Add main service of this microservice:
+            // Reads from queue -> Add some informations -> Publish to Queue
+            builder.Services.AddSingleton<IMessageProcessorBackground, MessageProcessor>();            
             builder.Services.AddHostedService(sp => sp.GetRequiredService<IMessageProcessorBackground>());
-            //builder.Services.AddHostedService(sp => sp.GetRequiredService<IMessageProcessorBackground<BaseLogMessage>>());
 
             var app = builder.Build();
 
             ConfigureMessageProcessorBackground(app);
-            //ConfigureMessageProducer(app);
-            //ConfigureMessageConsumer(app);
 
             // use this message producer just to test adding messages to the in queue, by using /MessageQueue/Send API
-            ConfigureMessageProducerForTestingWithApi(app);
+            //ConfigureMessageProducerForTestingWithApi(app);
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -70,35 +67,22 @@ namespace BaseEnricher
 
             app.Run();
         }
-
-        private static void ConfigureMessageProducer(WebApplication app)
-        {
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            var messageProducer = app.Services.GetRequiredService<IMessageProducer<EnrichedLogMessage>>();
-            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_OUT_HOSTNAME);
-            if (hostname == null)
-            {
-                logger.LogCritical("RabbitMQ instance not specified as env variable");
-                throw new MissingFieldException(nameof(hostname));
-            }
-            messageProducer.Configure(hostname);
-        }
-        private static void ConfigureMessageProducerForTestingWithApi(WebApplication app)
-        {
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            var messageProducer = app.Services.GetRequiredService<IMessageProducer<BaseLogMessage>>();
-            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME);
-            if (hostname == null)
-            {
-                logger.LogCritical("RabbitMQ instance not specified as env variable");
-                throw new MissingFieldException(nameof(hostname));
-            }
-            messageProducer.Configure(hostname);
-        }
+        //private static void ConfigureMessageProducerForTestingWithApi(WebApplication app)
+        //{
+        //    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        //    var messageProducer = app.Services.GetRequiredService<IMessageProducer<BaseLogMessage>>();
+        //    var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME);
+        //    if (hostname == null)
+        //    {
+        //        logger.LogCritical("RabbitMQ instance not specified as env variable");
+        //        throw new MissingFieldException(nameof(hostname));
+        //    }
+        //    messageProducer.Configure(hostname);
+        //}
         private static void ConfigureMessageProcessorBackground(WebApplication app)
         {
             var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            var consumer = app.Services.GetRequiredService<IMessageProcessorBackground>();
+            var messageProcessor = app.Services.GetRequiredService<IMessageProcessorBackground>();
             var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME);
             var topic = QueueNames.QUEUE_BASE_MESSAGE_READ;
             if (hostname == null)
@@ -106,20 +90,7 @@ namespace BaseEnricher
                 logger.LogCritical("RabbitMQ instance not specified as env variable");
                 throw new MissingFieldException(nameof(hostname));
             }
-            consumer.Configure(hostname, topic);
-        }
-        private static void ConfigureMessageConsumer(WebApplication app)
-        {
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            var consumer = app.Services.GetRequiredService<IMessageConsumer>();
-            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME);
-            var topic = QueueNames.QUEUE_BASE_MESSAGE_READ;
-            if (hostname == null)
-            {
-                logger.LogCritical("RabbitMQ instance not specified as env variable");
-                throw new MissingFieldException(nameof(hostname));
-            }
-            consumer.Configure(hostname);
+            messageProcessor.Configure(hostname, topic);
         }
     }
 }

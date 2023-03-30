@@ -5,6 +5,7 @@ using BaseEnricher.Services.MessageService;
 using Microsoft.AspNetCore.Mvc;
 using RabbitMQ.Client.Events;
 using System.Text;
+using System.Text.Json;
 
 namespace BaseEnricher.Controllers
 {
@@ -25,7 +26,7 @@ namespace BaseEnricher.Controllers
         [HttpGet]
         public IActionResult Send(string message)
         {
-            _logger.LogInformation("Requested send of message");
+            _logger.LogInformation("API: Requested send of message");
             var messageProducer = _serviceProvider.GetRequiredService<IMessageProducer<BaseLogMessage>>();            
 
             var logMessage = new BaseLogMessage()
@@ -56,22 +57,18 @@ namespace BaseEnricher.Controllers
         [HttpGet]
         public async Task<IActionResult> SubscribeToChannel()
         {
-            var messageConsumer2 = _serviceProvider.GetRequiredService<IMessageConsumer>();
+            var messageConsumer2 = _serviceProvider.GetRequiredService<IMessageConsumer<BaseLogMessage>>();
             messageConsumer2.Configure(Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_OUT_HOSTNAME));
 
-            //messageConsumer2.StartAsync(new CancellationToken());
             await messageConsumer2.SubscribeAsync(QueueNames.QUEUE_BASE_MESSAGE_READ);
             messageConsumer2.OnMessageReceived += Execute;
-            return Ok($"started subscription to topic {QueueNames.QUEUE_BASE_MESSAGE_READ}");
+
+            return Ok($"API: Started subscription to topic {QueueNames.QUEUE_BASE_MESSAGE_READ}");
         }
-
-        private async Task Execute(object obj, BasicDeliverEventArgs delivery)
+        private void Execute(object? obj, BaseLogMessage message)
         {
-            var body = delivery.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-            _logger.LogInformation($"CONTROLLER: Queue consumer has received a new message: {message}");
-
-            await Task.CompletedTask;
+            var serializedMsg = JsonSerializer.Serialize(message);
+            _logger.LogInformation($"API: Queue consumer has received a new message: {serializedMsg}");
         }
     }
 }

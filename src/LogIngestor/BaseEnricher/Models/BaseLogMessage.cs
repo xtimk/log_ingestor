@@ -2,7 +2,7 @@
 
 namespace BaseEnricher.Models
 {
-    public class BaseLogMessage
+    public class BaseLogMessage : Message
     {
         public string Message { get; set; }
         public AgentMetaData AgentMetaData { get; set; }

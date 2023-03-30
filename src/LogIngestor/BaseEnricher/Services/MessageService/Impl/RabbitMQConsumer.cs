@@ -5,19 +5,21 @@ using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 using System.Data.Common;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Channels;
 
 namespace BaseEnricher.Services.MessageService.Impl
 {
-    public class RabbitMQConsumer : IMessageConsumer
+    public class RabbitMQConsumer<T> : IMessageConsumer<T> where T : Message
     {
-        private readonly ILogger<RabbitMQConsumer> _logger;
+        private readonly ILogger<RabbitMQConsumer<T>> _logger;
         //private readonly IMessageBrokerConfiguration _messageBrokerConfiguration;
         private string? _hostname;
 
-        public event AsyncEventHandler<BasicDeliverEventArgs> OnMessageReceived;
+        //public event AsyncEventHandler<BasicDeliverEventArgs> OnMessageReceived;
+        public event EventHandler<T> OnMessageReceived;
 
-        public RabbitMQConsumer(ILogger<RabbitMQConsumer> logger)
+        public RabbitMQConsumer(ILogger<RabbitMQConsumer<T>> logger)
         {
             _logger = logger;
             //_messageBrokerConfiguration = messageBrokerConfiguration;
@@ -57,7 +59,19 @@ namespace BaseEnricher.Services.MessageService.Impl
                 {
                     var message = Encoding.UTF8.GetString(body.Body.ToArray());
                     _logger.LogInformation($"{baseLogMessage}Received a new message: {message}");
-                    await OnMessageReceived.Invoke(model, body);
+                    
+                    var deserializedMessage = JsonSerializer.Deserialize<T>(message);
+                    //await OnMessageReceived.Invoke(model, body);
+
+                    if(deserializedMessage != null)
+                    {
+                        OnMessageReceived.Invoke(model, deserializedMessage);
+                    }
+                    else
+                    {
+                        // exception throw here...
+                        _logger.LogError($"{baseLogMessage}Error, deserialization of message produced null.");
+                    }
                     channel.BasicAck(body.DeliveryTag, false);
                 }
                 catch (AlreadyClosedException ex)

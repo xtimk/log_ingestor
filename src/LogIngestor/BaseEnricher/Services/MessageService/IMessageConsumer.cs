@@ -1,12 +1,13 @@
-﻿using RabbitMQ.Client.Events;
+﻿using BaseEnricher.Models;
+using RabbitMQ.Client.Events;
 
 namespace BaseEnricher.Services.MessageService
 {
-    public interface IMessageConsumer
+    public interface IMessageConsumer<T>
     {
         Task SubscribeAsync(string topic);
         void Configure(string hostname);
 
-        event AsyncEventHandler<BasicDeliverEventArgs> OnMessageReceived;
+        event EventHandler<T> OnMessageReceived;
     }
 }
