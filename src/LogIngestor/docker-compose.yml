@@ -10,7 +10,7 @@ services:
       - InBrokerHostname=rabbitmq.allinone.local
       - InBrokerTopic=base_message_queue
       - OutBrokerHostname=rabbitmq.allinone.local
-      - OutBrokerTopi=enriched_message_queue
+      - OutBrokerTopic=enriched_message_queue
     depends_on:
       - "rabbitmq.allinone.local"
 
