@@ -1,0 +1,26 @@
+version: '3.4'
+
+services:
+  baseenricher:
+    image: ${DOCKER_REGISTRY-}baseenricher
+    build:
+      context: .
+      dockerfile: BaseEnricher/Dockerfile
+    environment:
+      - QueueIn=rabbitmq.allinone.local
+      - QueueOut=rabbitmq.allinone.local
+    depends_on:
+      - "rabbitmq.allinone.local"
+
+  rabbitmq.allinone.local:
+    container_name: "rabbitmq.allinone.local"
+    hostname: "rabbitmq.allinone.local"
+    image: rabbitmq:3.8-management-alpine
+    environment:
+        - RABBITMQ_DEFAULT_USER=guest
+        - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+        # AMQP protocol port
+        - '5672:5672'
+        # HTTP management UI
+        - '15672:15672'
