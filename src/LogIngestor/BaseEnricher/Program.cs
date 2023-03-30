@@ -1,6 +1,8 @@
 using BaseEnricher.Constants;
 using BaseEnricher.Exceptions;
+using BaseEnricher.Services.DateTimeProvider;
 using BaseEnricher.Services.MessageBackgroundProcessor;
+using BaseEnricher.Services.MessageProcessor.Commands;
 using BaseEnricher.Services.MessageService;
 using BaseEnricher.Services.MessageService.Impl;
 using Serilog;
@@ -25,6 +27,12 @@ namespace BaseEnricher
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            // Add commands to process messages
+            builder.Services.AddScoped<AddDateProcessCommand>();
+
+            // Add singleton that provides current time. This is needed in order to unit test things correctly
+            builder.Services.AddSingleton<IDateTimeNowProvider, DateTimeNowProvider>();
 
             // Add classes to use to pub/sub from external queues
             builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));

@@ -91,9 +91,10 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
                 return;
             }
             var messageProducer = scope.ServiceProvider.GetRequiredService<IMessageProducer<EnrichedLogMessage>>();
+            var addDateProcessCommand = scope.ServiceProvider.GetRequiredService<AddDateProcessCommand>();
             try
             {
-                var addDateCommand = new MessageProcessor<EnrichedLogMessage, BaseLogMessage>(new AddDateProcessCommand());
+                var addDateCommand = new MessageProcessor<EnrichedLogMessage, BaseLogMessage>(addDateProcessCommand);
                 _logger.LogDebug($"{_baseLogMessage}Add date to message: {message}");
                 
                 var enrichedMessage = addDateCommand.Execute(message);
