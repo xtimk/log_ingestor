@@ -1,6 +1,6 @@
 ﻿using BaseEnricher.Models;
 
-namespace BaseEnricher.Services.MessageProcessor.Commands.Impl
+namespace BaseEnricher.Services.MessageProcessor.Commands
 {
     public class AddDateProcessCommand : ProcessCommandStrategy<EnrichedLogMessage, BaseLogMessage>
     {

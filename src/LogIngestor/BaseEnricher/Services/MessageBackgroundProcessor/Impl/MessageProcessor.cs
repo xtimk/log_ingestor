@@ -1,12 +1,11 @@
 ﻿using BaseEnricher.Constants;
 using BaseEnricher.Models;
+using BaseEnricher.Services.MessageProcessor;
 using BaseEnricher.Services.MessageProcessor.Commands;
-using BaseEnricher.Services.MessageProcessor.Commands.Impl;
-using BaseEnricher.Services.MessageProcessor.Impl;
 using BaseEnricher.Services.MessageService;
 using System.Text.Json;
 
-namespace BaseEnricher.Services.MessageBackgroundProcessor.Impl
+namespace BaseEnricher.Services.MessageBackgroundProcessor
 {
     public class MessageProcessor : BackgroundService, IMessageProcessorBackground
     {
@@ -83,10 +82,10 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor.Impl
 
                 _readedEvents++;
             }
-            catch (MessageProcessorException ex)
-            {
-                _logger.LogError($"{_baseLogMessage}Error processing message. Message: {message}", ex);
-            }
+            //catch (MessageProcessorException ex)
+            //{
+            //    _logger.LogError($"{_baseLogMessage}Error processing message. Message: {message}", ex);
+            //}
             catch (JsonException ex)
             {
                 _logger.LogError($"{_baseLogMessage}Error parsing json. Message: {message}", ex);

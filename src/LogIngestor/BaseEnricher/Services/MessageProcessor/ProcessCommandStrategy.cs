@@ -1,4 +1,4 @@
-﻿namespace BaseEnricher.Services.MessageProcessor.Commands
+﻿namespace BaseEnricher.Services.MessageProcessor
 {
     public abstract class ProcessCommandStrategy<T, U>
     {

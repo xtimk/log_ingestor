@@ -1,14 +1,8 @@
 using BaseEnricher.Constants;
-using BaseEnricher.Models;
 using BaseEnricher.Services.MessageBackgroundProcessor;
-using BaseEnricher.Services.MessageBackgroundProcessor.Impl;
-using BaseEnricher.Services.MessageProcessor;
-using BaseEnricher.Services.MessageProcessor.Impl;
 using BaseEnricher.Services.MessageService;
 using BaseEnricher.Services.MessageService.Impl;
-using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using System;
 
 namespace BaseEnricher
 {
@@ -67,18 +61,7 @@ namespace BaseEnricher
 
             app.Run();
         }
-        //private static void ConfigureMessageProducerForTestingWithApi(WebApplication app)
-        //{
-        //    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-        //    var messageProducer = app.Services.GetRequiredService<IMessageProducer<BaseLogMessage>>();
-        //    var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstants.ENV_RABBITMQ_IN_HOSTNAME);
-        //    if (hostname == null)
-        //    {
-        //        logger.LogCritical("RabbitMQ instance not specified as env variable");
-        //        throw new MissingFieldException(nameof(hostname));
-        //    }
-        //    messageProducer.Configure(hostname);
-        //}
+
         private static void ConfigureMessageProcessorBackground(WebApplication app)
         {
             var logger = app.Services.GetRequiredService<ILogger<Program>>();

@@ -1,10 +1,10 @@
-﻿namespace BaseEnricher.Services.MessageProcessor.Commands
+﻿namespace BaseEnricher.Services.MessageProcessor
 {
-    public class MessageProcessor<T,U>
+    public class MessageProcessor<T, U>
     {
         private ProcessCommandStrategy<T, U> _processCommandStrategy;
 
-        public MessageProcessor(ProcessCommandStrategy<T,U> processCommandStrategy)
+        public MessageProcessor(ProcessCommandStrategy<T, U> processCommandStrategy)
         {
             _processCommandStrategy = processCommandStrategy;
         }
