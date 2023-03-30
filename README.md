@@ -11,7 +11,7 @@ I created this project mainly to practise with microservices/distributed archite
 *Microservices are build and tested using .NET Core 6.0.401 on Ubuntu, Windows, MacOS*
 
 ## Getting Started
-Make sure you have installed and configured docker in your environment. After that, you can run the below commands from the /src/LogIngestor/ directory to start all services.
+Make sure you have installed and configured docker in your environment. After that, you can run the below commands from the `/src/LogIngestor/` directory to start all services.
 ```bash
 docker-compose build
 docker-compose up
