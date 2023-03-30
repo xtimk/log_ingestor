@@ -1,5 +1,5 @@
 # Log Ingestor
-A log manager written in c# using a microservices architecture. All services are containerized using docker.
+A log manager written in .NET 6 using a microservices architecture. All services are containerized using docker.
 
 I created this project mainly to practise with microservices/distributed architectures and containers.
 
