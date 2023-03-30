@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.Eventing.Reader;
-
-namespace BaseEnricher.Models
+﻿namespace BaseEnricher.Models
 {
     public class BaseLogMessage : Message
     {

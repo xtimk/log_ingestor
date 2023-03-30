@@ -3,8 +3,6 @@ using BaseEnricher.Models;
 using BaseEnricher.Services.MessageBackgroundProcessor;
 using BaseEnricher.Services.MessageService;
 using Microsoft.AspNetCore.Mvc;
-using RabbitMQ.Client.Events;
-using System.Text;
 using System.Text.Json;
 
 namespace BaseEnricher.Controllers

@@ -1,12 +1,9 @@
-﻿using BaseEnricher.Constants;
-using BaseEnricher.Models;
+﻿using BaseEnricher.Models;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
-using System.Data.Common;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Channels;
 
 namespace BaseEnricher.Services.MessageService.Impl
 {

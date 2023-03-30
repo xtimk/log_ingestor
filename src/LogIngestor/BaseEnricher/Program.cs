@@ -70,7 +70,7 @@ namespace BaseEnricher
             var topic = QueueNames.QUEUE_BASE_MESSAGE_READ;
             if (hostname == null)
             {
-                logger.LogCritical("RabbitMQ instance not specified as env variable");
+                logger.LogCritical("RabbitMQ instance not found as env variable.");
                 throw new MissingFieldException(nameof(hostname));
             }
             messageProcessor.Configure(hostname, topic);

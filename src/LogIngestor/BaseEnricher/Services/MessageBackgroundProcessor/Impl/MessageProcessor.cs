@@ -3,7 +3,6 @@ using BaseEnricher.Models;
 using BaseEnricher.Services.MessageProcessor;
 using BaseEnricher.Services.MessageProcessor.Commands;
 using BaseEnricher.Services.MessageService;
-using System.Text.Json;
 
 namespace BaseEnricher.Services.MessageBackgroundProcessor
 {

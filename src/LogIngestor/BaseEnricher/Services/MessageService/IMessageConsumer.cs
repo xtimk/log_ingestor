@@ -1,7 +1,4 @@
-﻿using BaseEnricher.Models;
-using RabbitMQ.Client.Events;
-
-namespace BaseEnricher.Services.MessageService
+﻿namespace BaseEnricher.Services.MessageService
 {
     public interface IMessageConsumer<T>
     {
