@@ -1,3 +1,4 @@
+using BaseEnricher.Configurations;
 using BaseEnricher.Constants;
 using BaseEnricher.Exceptions;
 using BaseEnricher.Services.DateTimeProvider;
@@ -33,6 +34,8 @@ namespace BaseEnricher
 
             // Add singleton that provides current time. This is needed in order to unit test things correctly
             builder.Services.AddSingleton<IDateTimeNowProvider, DateTimeNowProvider>();
+
+            ConfigureMessageBrokerConfigurations(builder);
 
             // Add classes to use to pub/sub from external queues
             builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
@@ -70,24 +73,45 @@ namespace BaseEnricher
 
             app.Run();
         }
-
-        private static void ConfigureMessageProcessorBackground(WebApplication app)
+        private static void ConfigureMessageBrokerConfigurations(WebApplicationBuilder builder)
         {
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-            var messageProcessor = app.Services.GetRequiredService<IMessageProcessorBackground>();
             var in_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_HOSTNAME);
             var in_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_TOPIC);
-            var out_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_HOSTNAME);
-            var out_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_TOPIC);
-
-            if(in_broker_hostname == null)
+            if (in_broker_hostname == null)
             {
                 throw new ConfigurationException(nameof(in_broker_hostname));
             }
-            if(in_broker_topic == null)
+            if (in_broker_topic == null)
             {
                 throw new ConfigurationException(nameof(in_broker_topic));
             }
+            // Add singleton containing global configuration of producer broker
+            builder.Services.AddSingleton<IMessageBrokerConfiguration<RabbitMQProducerConfiguration>>(new RabbitMQProducerConfiguration(in_broker_hostname, 0, in_broker_topic));
+
+            var out_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_HOSTNAME);
+            var out_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_TOPIC);
+            if (out_broker_hostname == null)
+            {
+                throw new ConfigurationException(nameof(in_broker_hostname));
+            }
+            if (out_broker_topic == null)
+            {
+                throw new ConfigurationException(nameof(in_broker_topic));
+            }
+            // Add singleton containing global configuration of producer broker
+            builder.Services.AddSingleton<IMessageBrokerConfiguration<RabbitMQConsumerConfiguration>>(new RabbitMQConsumerConfiguration(out_broker_hostname, 0, out_broker_topic));
+
+        }
+        private static void ConfigureMessageProcessorBackground(WebApplication app)
+        {
+            var inMessageBrokerConfiguration = app.Services.GetRequiredService<IMessageBrokerConfiguration<RabbitMQProducerConfiguration>>();
+            var outMessageBrokerConfiguration = app.Services.GetRequiredService<IMessageBrokerConfiguration<RabbitMQConsumerConfiguration>>();
+
+            var messageProcessor = app.Services.GetRequiredService<IMessageProcessorBackground>();
+            
+            // Todo: abstract these params into IMessageBrokerConfiguration
+            var out_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_HOSTNAME);
+            var out_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_TOPIC);
             if(out_broker_hostname == null)
             {
                 throw new ConfigurationException(nameof(out_broker_hostname));
@@ -96,7 +120,8 @@ namespace BaseEnricher
             {
                 throw new ConfigurationException(nameof(out_broker_topic));
             }
-            messageProcessor.Configure(in_broker_hostname, in_broker_topic, out_broker_hostname, out_broker_topic);
+
+            messageProcessor.Configure(inMessageBrokerConfiguration.Hostname, inMessageBrokerConfiguration.Topic, outMessageBrokerConfiguration.Hostname, outMessageBrokerConfiguration.Topic);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using BaseEnricher.Constants;
+﻿using BaseEnricher.Configurations;
+using BaseEnricher.Constants;
 using BaseEnricher.Models;
 using BaseEnricher.Services.MessageBackgroundProcessor;
 using BaseEnricher.Services.MessageService;
@@ -38,14 +39,15 @@ namespace BaseEnricher.Controllers
                     AgentHostName = "myclient.test.local"
                 }
             };
-            var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_HOSTNAME);
+
+            var brokerProducerConfig = _serviceProvider.GetRequiredService<IMessageBrokerConfiguration<RabbitMQProducerConfiguration>>();
             
-            if (hostname == null)
+            if (brokerProducerConfig.Hostname == null)
             {
                 _logger.LogError("API: can't retrieve hostname of queue broker from env variable");
                 return BadRequest("API: can't retrieve hostname of queue broker from env variable");
             }
-            messageProducer.Configure(hostname);
+            messageProducer.Configure(brokerProducerConfig.Hostname);
             messageProducer.WriteToQueue(QueueNames.QUEUE_BASE_MESSAGE_READ, logMessage);
             return Ok(message);
         }

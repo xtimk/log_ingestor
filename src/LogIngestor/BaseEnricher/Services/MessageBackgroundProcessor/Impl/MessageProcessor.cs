@@ -39,13 +39,6 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
             _logger.LogInformation($"{_baseLogMessage}Configured. Input from broker: {_in_broker_hostname}, topic {_in_broker_topic}. Output to broker: {_out_broker_hostname}, topic {_out_broker_topic}");
         }
 
-        //public void Configure(string host, string topic)
-        //{
-        //    _hostname = host;
-        //    _topic = topic;
-        //    _logger.LogInformation($"{_baseLogMessage}Configured. Remote queue host: {_hostname}. Queue channel to be consumed: {_topic}");
-        //}
-
         public int NumberOfEventsReaded()
         {
             return _readedEvents;
