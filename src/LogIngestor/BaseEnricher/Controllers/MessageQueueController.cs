@@ -46,6 +46,33 @@ namespace BaseEnricher.Controllers
             return Ok(message);
         }
 
+        [HttpGet]
+        public IActionResult SendXMessages(string message, int number_to_send)
+        {
+            _logger.LogInformation($"API: Requested send of {number_to_send} messages");
+            var messageProducer = _serviceProvider.GetRequiredService<IMessageProducer<BaseLogMessage>>();
+
+            var logMessage = new BaseLogMessage()
+            {
+                Message = message,
+                AgentMetaData = new AgentMetaData()
+                {
+                    AgentAcquireDate = DateTime.UtcNow,
+                    AgentName = "Windows_x64",
+                    AgentVersion = new Version(2, 1, 32),
+                    AgentHostName = "myclient.test.local"
+                }
+            };
+
+            var brokerProducerConfig = _serviceProvider.GetRequiredService<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>>();
+            messageProducer.Configure(brokerProducerConfig.Hostname);
+            for (int i = 0; i < number_to_send; i++)
+            {
+                messageProducer.WriteToQueue(QueueNames.QUEUE_BASE_MESSAGE_READ, logMessage);
+            }
+            return Ok(message);
+        }
+
         // Get some stats
         [HttpGet]
         public IActionResult GetNumberOfEventsProcessedByConsumer()

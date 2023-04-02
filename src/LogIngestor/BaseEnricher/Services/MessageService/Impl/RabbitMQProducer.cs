@@ -11,6 +11,8 @@ namespace BaseEnricher.Services.MessageService.Impl
         private ConnectionFactory? _factory;
         private Guid _consumer_guid;
         private string _baseLogMessage;
+        IConnection _connection;
+        IModel _channel;
 
 
         public RabbitMQProducer(ILogger<RabbitMQProducer<T>> logger)
@@ -25,6 +27,8 @@ namespace BaseEnricher.Services.MessageService.Impl
         {
             _factory = new ConnectionFactory() { HostName = hostname };
             _logger.LogInformation($"{_baseLogMessage}Configured. Queue host: {hostname}");
+            _connection = _factory.CreateConnection();
+            _channel = _connection.CreateModel();
         }
 
         public bool WriteToQueue(string topic, T message)
@@ -35,21 +39,18 @@ namespace BaseEnricher.Services.MessageService.Impl
                 throw new ArgumentNullException(nameof(_factory));
             }
 
-            using var connection = _factory.CreateConnection();
-            using var channel = connection.CreateModel();
-            channel.QueueDeclare(
+            _channel.QueueDeclare(
                 queue: topic,
                 durable: false,
                 exclusive: false,
                 autoDelete: false,
                 arguments: null);
 
-
-            var serializedMessage = JsonSerializer.Serialize<T>(message);
+            var serializedMessage = JsonSerializer.Serialize(message);
             
             var body = Encoding.UTF8.GetBytes(serializedMessage);
 
-            channel.BasicPublish(exchange: string.Empty,
+            _channel.BasicPublish(exchange: string.Empty,
                                  routingKey: topic,
                                  basicProperties: null,
                                  body: body);

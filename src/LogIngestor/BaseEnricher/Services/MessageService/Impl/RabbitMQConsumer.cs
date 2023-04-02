@@ -11,6 +11,9 @@ namespace BaseEnricher.Services.MessageService.Impl
     {
         private readonly ILogger<RabbitMQConsumer<T>> _logger;
         private string? _hostname;
+        private ConnectionFactory _factory;
+        private IConnection _connection;
+        private IModel _channel;
 
         public event EventHandler<T>? OnMessageReceived;
 
@@ -22,6 +25,10 @@ namespace BaseEnricher.Services.MessageService.Impl
         public void Configure(string hostname)
         {
             _hostname = hostname;
+            _factory = new ConnectionFactory() { HostName = _hostname, DispatchConsumersAsync = false };
+            _connection = _factory.CreateConnection();
+            _channel = _connection.CreateModel();
+
         }
 
         public void Subscribe(string topic)
@@ -33,15 +40,12 @@ namespace BaseEnricher.Services.MessageService.Impl
 
             var baseLogMessage = $"RabbitMQ Consumer[{Guid.NewGuid()}]: ";
 
-            var _factory = new ConnectionFactory() { HostName = _hostname, DispatchConsumersAsync = false };
-            IConnection connection = _factory.CreateConnection();
-            IModel channel = connection.CreateModel();
-            channel.QueueDeclare(queue: topic, durable: false, exclusive: false, autoDelete: false, arguments: null);
+            _channel.QueueDeclare(queue: topic, durable: false, exclusive: false, autoDelete: false, arguments: null);
 
             // Don't dispatch a new message to a consumer until it has processed and acknowledged the previous one.
-            channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+            //_channel.BasicQos(prefetchSize: 0, prefetchCount: 100, global: false);
 
-            var consumer = new EventingBasicConsumer(channel);
+            var consumer = new EventingBasicConsumer(_channel);
             consumer.Registered += (model, body) =>
             {
                 _logger.LogInformation($"{baseLogMessage}A new subscriber has been detected.");
@@ -66,7 +70,7 @@ namespace BaseEnricher.Services.MessageService.Impl
                         throw new Exception();
                     }
                     OnMessageReceived.Invoke(model, deserializedMessage);
-                    channel.BasicAck(body.DeliveryTag, false);
+                    _channel.BasicAck(body.DeliveryTag, false);
                 }
                 catch (AlreadyClosedException ex)
                 {
@@ -78,7 +82,7 @@ namespace BaseEnricher.Services.MessageService.Impl
                 }
             };
 
-            channel.BasicConsume(queue: topic, autoAck: false, consumer: consumer);
+            _channel.BasicConsume(queue: topic, autoAck: false, consumer: consumer);
         }
     }
 }

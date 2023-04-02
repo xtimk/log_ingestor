@@ -39,7 +39,7 @@ namespace FSWriter.Services.MessageService.Impl
             channel.QueueDeclare(queue: topic, durable: false, exclusive: false, autoDelete: false, arguments: null);
 
             // Don't dispatch a new message to a consumer until it has processed and acknowledged the previous one.
-            channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+            //channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
             var consumer = new EventingBasicConsumer(channel);
             consumer.Registered += (model, body) =>

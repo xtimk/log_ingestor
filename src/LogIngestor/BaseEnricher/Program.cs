@@ -7,6 +7,7 @@ using BaseEnricher.Services.MessageBrokerConfigurationBuilder.Impl;
 using BaseEnricher.Services.MessageProcessor.Commands;
 using BaseEnricher.Services.MessageService;
 using BaseEnricher.Services.MessageService.Impl;
+using Microsoft.OpenApi.Models;
 using Serilog;
 
 namespace BaseEnricher
@@ -28,8 +29,11 @@ namespace BaseEnricher
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
+            //builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(config =>
+            {
+                config.SwaggerDoc("v1", new OpenApiInfo() { Title = "Base Log Enricher", Version = "v1" });
+            });
             // Add commands to process messages
             builder.Services.AddScoped<AddDateProcessCommand>();
 

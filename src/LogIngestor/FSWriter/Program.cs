@@ -8,6 +8,7 @@ using FSWriter.Services.MessageBackgroundProcessor;
 using FSWriter.Services.MessageBrokerConfigurationBuilder.Impl;
 using FSWriter.Services.MessageService;
 using FSWriter.Services.MessageService.Impl;
+using Microsoft.OpenApi.Models;
 using Serilog;
 
 namespace FSWriter
@@ -30,7 +31,11 @@ namespace FSWriter
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            //builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(config =>
+            {
+                config.SwaggerDoc("v1", new OpenApiInfo() { Title = "Storage filesystem writer", Version = "v1" });
+            });
 
             builder.Services.AddSingleton<IDateTimeNowProvider, DateTimeNowProvider>();
 
