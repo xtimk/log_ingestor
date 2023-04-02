@@ -7,6 +7,7 @@ I created this project mainly to practise with microservices/distributed archite
 |Microservice|Status
 |-|-|
 |BaseEnricher|[![base-enricher](https://github.com/xtimk/log_ingestor/actions/workflows/baseenricher.yml/badge.svg?branch=main)](https://github.com/xtimk/log_ingestor/actions/workflows/baseenricher.yml)
+|FSWriter|[![fs-writer](https://github.com/xtimk/log_ingestor/actions/workflows/fs-writer.yml/badge.svg)](https://github.com/xtimk/log_ingestor/actions/workflows/fs-writer.yml)
 
 *Microservices are build and tested using .NET Core 6.0.401 on Ubuntu, Windows, MacOS*
 
