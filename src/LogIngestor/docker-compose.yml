@@ -8,11 +8,16 @@ services:
       dockerfile: BaseEnricher/Dockerfile
     environment:
       - InBrokerHostname=rabbitmq.allinone.local
+      - InBrokerPort=5672
       - InBrokerTopic=base_message_queue
       - OutBrokerHostname=rabbitmq.allinone.local
+      - OutBrokerPort=5672
       - OutBrokerTopic=enriched_message_queue
     depends_on:
       - "rabbitmq.allinone.local"
+    networks:
+     - logingestor-net
+
 
   rabbitmq.allinone.local:
     container_name: "rabbitmq.allinone.local"
@@ -26,3 +31,29 @@ services:
         - '5672:5672'
         # HTTP management UI
         - '15672:15672'
+    networks:
+     - logingestor-net
+
+  fswriter:
+    image: ${DOCKER_REGISTRY-}fswriter
+    build:
+      context: .
+      dockerfile: FSWriter/Dockerfile
+    depends_on:
+      - "rabbitmq.allinone.local"
+    networks:
+     - logingestor-net
+    volumes:
+     - filesystem-storage:/usr/share/log-ingestor/data
+    environment:
+     - InBrokerHostname=rabbitmq.allinone.local
+     - InBrokerPort=5672
+     - InBrokerTopic=enriched_message_queue
+     - StoragePathInContainer=/usr/share/log-ingestor/data
+
+volumes:
+  filesystem-storage:
+
+networks:
+  logingestor-net:
+
