@@ -1,8 +1,10 @@
-﻿namespace BaseEnricher.Services.MessageBackgroundProcessor
+﻿using BaseEnricher.Services.MessageBrokerConfigurationBuilder;
+
+namespace BaseEnricher.Services.MessageBackgroundProcessor
 {
     public interface IMessageProcessorBackground : IHostedService
     {
-        void Configure(string in_broker_host, string in_broker_topic, string out_broker_host, string out_broker_topic);
+        void Configure(IMessageBrokerConfiguration input_broker_configuration, IMessageBrokerConfiguration output_broker_configuration);
         int NumberOfEventsReaded();
     }
 }

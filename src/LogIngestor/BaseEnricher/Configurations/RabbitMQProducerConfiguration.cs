@@ -1,16 +1,18 @@
-﻿namespace BaseEnricher.Configurations
+﻿using BaseEnricher.Services.MessageBrokerConfigurationBuilder;
+
+namespace BaseEnricher.Configurations
 {
-    public class RabbitMQProducerConfiguration : IMessageBrokerConfiguration<RabbitMQProducerConfiguration>
+    public class RabbitMQProducerConfiguration : IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>
     {
         private readonly string hostname;
         private readonly int port;
         private readonly string topic;
 
-        public RabbitMQProducerConfiguration(string hostname, int port, string topic)
+        public RabbitMQProducerConfiguration(IMessageBrokerConfiguration conf)
         {
-            this.hostname = hostname;
-            this.port = port;
-            this.topic = topic;
+            hostname = conf.Hostname;
+            port = conf.Port;
+            topic = conf.Topic;
         }
 
         public string Hostname => hostname;

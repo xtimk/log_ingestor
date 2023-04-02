@@ -51,16 +51,14 @@ namespace BaseEnricher.Services.MessageService.Impl
                 try
                 {
                     var message = Encoding.UTF8.GetString(body.Body.ToArray());
-                    _logger.LogInformation($"{baseLogMessage}Received a new message: {message}");
+                    _logger.LogDebug($"{baseLogMessage}Received a new message: {message}");
                     
                     var deserializedMessage = JsonSerializer.Deserialize<T>(message);
-                    //await OnMessageReceived.Invoke(model, body);
 
                     if(deserializedMessage == null)
                     {
-                        // exception throw here...
                         _logger.LogError($"{baseLogMessage}Error, deserialization of message produced null.");
-                        throw new Exception();
+                        throw new JsonException();
                     }
                     if(OnMessageReceived == null)
                     {
@@ -78,15 +76,9 @@ namespace BaseEnricher.Services.MessageService.Impl
                 {
                     _logger.LogError($"{baseLogMessage}Unable to execute action due to an error", e);
                 }
-                finally
-                {
-                    // nothing..
-                }
             };
 
-            // Register a consumer to listen to a specific queue. 
             channel.BasicConsume(queue: topic, autoAck: false, consumer: consumer);
-            //await Task.CompletedTask;
         }
     }
 }

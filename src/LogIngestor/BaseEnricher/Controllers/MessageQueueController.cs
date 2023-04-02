@@ -40,13 +40,7 @@ namespace BaseEnricher.Controllers
                 }
             };
 
-            var brokerProducerConfig = _serviceProvider.GetRequiredService<IMessageBrokerConfiguration<RabbitMQProducerConfiguration>>();
-            
-            if (brokerProducerConfig.Hostname == null)
-            {
-                _logger.LogError("API: can't retrieve hostname of queue broker from env variable");
-                return BadRequest("API: can't retrieve hostname of queue broker from env variable");
-            }
+            var brokerProducerConfig = _serviceProvider.GetRequiredService<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>>();
             messageProducer.Configure(brokerProducerConfig.Hostname);
             messageProducer.WriteToQueue(QueueNames.QUEUE_BASE_MESSAGE_READ, logMessage);
             return Ok(message);

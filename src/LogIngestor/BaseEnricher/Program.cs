@@ -1,8 +1,9 @@
 using BaseEnricher.Configurations;
 using BaseEnricher.Constants;
-using BaseEnricher.Exceptions;
+using BaseEnricher.Services.ConfigurationBuilder;
 using BaseEnricher.Services.DateTimeProvider;
 using BaseEnricher.Services.MessageBackgroundProcessor;
+using BaseEnricher.Services.MessageBrokerConfigurationBuilder.Impl;
 using BaseEnricher.Services.MessageProcessor.Commands;
 using BaseEnricher.Services.MessageService;
 using BaseEnricher.Services.MessageService.Impl;
@@ -35,26 +36,25 @@ namespace BaseEnricher
             // Add singleton that provides current time. This is needed in order to unit test things correctly
             builder.Services.AddSingleton<IDateTimeNowProvider, DateTimeNowProvider>();
 
-            ConfigureMessageBrokerConfigurations(builder);
+            // Add singletons containing IMessageBrokerConfigurations for the producer and the consumer
+            AddMessageBrokerConfigurationsAsSingletons(builder);
 
-            // Add classes to use to pub/sub from external queues
-            builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
-            builder.Services.AddSingleton(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
+            // Add message broker configuration builder, so that i can build configuration everywhere. Not used yet.
+            builder.Services.AddScoped<IMessageBrokerConfigurationBuilder, RabbitMQConfigurationBuilder>();
 
-            // Add service that processes messages, adding information
-            //builder.Services.AddSingleton<IMessageProcessor<BaseLogMessage>, MessageEnricherProcessor>();
+            // Add RabbitMQProducer and RabbitMQConsumer classes
+            builder.Services.AddScoped(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
+            builder.Services.AddScoped(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
 
-            // Add main service of this microservice:
+            // Add main service of this microservice
             // Reads from queue -> Add some informations -> Publish to Queue
             builder.Services.AddSingleton<IMessageProcessorBackground, MessageProcessor>();            
             builder.Services.AddHostedService(sp => sp.GetRequiredService<IMessageProcessorBackground>());
 
             var app = builder.Build();
 
+            // Configure the main service of this microservice
             ConfigureMessageProcessorBackground(app);
-
-            // use this message producer just to test adding messages to the in queue, by using /MessageQueue/Send API
-            //ConfigureMessageProducerForTestingWithApi(app);
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -68,60 +68,34 @@ namespace BaseEnricher
 
             app.UseAuthorization();
 
-
             app.MapControllers();
 
             app.Run();
         }
-        private static void ConfigureMessageBrokerConfigurations(WebApplicationBuilder builder)
+        private static void AddMessageBrokerConfigurationsAsSingletons(WebApplicationBuilder builder)
         {
+            var in_messageBrokerConfigurationBuilder = new RabbitMQConfigurationBuilder();
             var in_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_HOSTNAME);
+            var in_broker_port_string = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_PORT);
             var in_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_IN_TOPIC);
-            if (in_broker_hostname == null)
-            {
-                throw new ConfigurationException(nameof(in_broker_hostname));
-            }
-            if (in_broker_topic == null)
-            {
-                throw new ConfigurationException(nameof(in_broker_topic));
-            }
-            // Add singleton containing global configuration of producer broker
-            builder.Services.AddSingleton<IMessageBrokerConfiguration<RabbitMQProducerConfiguration>>(new RabbitMQProducerConfiguration(in_broker_hostname, 0, in_broker_topic));
+            var inMessageBrokerConf = in_messageBrokerConfigurationBuilder.CreateConfiguration(in_broker_hostname, in_broker_port_string, in_broker_topic);
+            builder.Services.AddSingleton<IMessageBrokerSingletonConfiguration<RabbitMQConsumerConfiguration>>(new RabbitMQConsumerConfiguration(inMessageBrokerConf));
 
+            var out_messageBrokerConfigurationBuilder = new RabbitMQConfigurationBuilder();
             var out_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_HOSTNAME);
+            var out_broker_port = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_PORT);
             var out_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_TOPIC);
-            if (out_broker_hostname == null)
-            {
-                throw new ConfigurationException(nameof(in_broker_hostname));
-            }
-            if (out_broker_topic == null)
-            {
-                throw new ConfigurationException(nameof(in_broker_topic));
-            }
-            // Add singleton containing global configuration of producer broker
-            builder.Services.AddSingleton<IMessageBrokerConfiguration<RabbitMQConsumerConfiguration>>(new RabbitMQConsumerConfiguration(out_broker_hostname, 0, out_broker_topic));
+            var outMessageBrokerConf = out_messageBrokerConfigurationBuilder.CreateConfiguration(out_broker_hostname, out_broker_port, out_broker_topic);
+            builder.Services.AddSingleton<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>>(new RabbitMQProducerConfiguration(outMessageBrokerConf));
 
         }
+
         private static void ConfigureMessageProcessorBackground(WebApplication app)
         {
-            var inMessageBrokerConfiguration = app.Services.GetRequiredService<IMessageBrokerConfiguration<RabbitMQProducerConfiguration>>();
-            var outMessageBrokerConfiguration = app.Services.GetRequiredService<IMessageBrokerConfiguration<RabbitMQConsumerConfiguration>>();
-
+            var inMessageBrokerConf = app.Services.GetRequiredService<IMessageBrokerSingletonConfiguration<RabbitMQConsumerConfiguration>>();
+            var outMessageBrokerConf = app.Services.GetRequiredService<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>>();
             var messageProcessor = app.Services.GetRequiredService<IMessageProcessorBackground>();
-            
-            // Todo: abstract these params into IMessageBrokerConfiguration
-            var out_broker_hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_HOSTNAME);
-            var out_broker_topic = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_TOPIC);
-            if(out_broker_hostname == null)
-            {
-                throw new ConfigurationException(nameof(out_broker_hostname));
-            }
-            if(out_broker_topic == null)
-            {
-                throw new ConfigurationException(nameof(out_broker_topic));
-            }
-
-            messageProcessor.Configure(inMessageBrokerConfiguration.Hostname, inMessageBrokerConfiguration.Topic, outMessageBrokerConfiguration.Hostname, outMessageBrokerConfiguration.Topic);
+            messageProcessor.Configure(inMessageBrokerConf, outMessageBrokerConf);
         }
     }
 }

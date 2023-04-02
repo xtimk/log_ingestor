@@ -11,13 +11,13 @@ namespace BaseEnricher.UnitTests.Api
         private Mock<ILogger<MessageQueueController>> _logger;
         private Mock<IMessageProducer<BaseLogMessage>> _messageProducer;
         private IServiceProvider _serviceProvider = default!;
-        private Mock<IMessageBrokerConfiguration<RabbitMQProducerConfiguration>> _brokerConfiguration;
+        private Mock<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>> _brokerConfiguration;
         [SetUp]
         public void Setup()
         {
             _logger = new Mock<ILogger<MessageQueueController>>();
             _messageProducer = new Mock<IMessageProducer<BaseLogMessage>>();
-            _brokerConfiguration = new Mock<IMessageBrokerConfiguration<RabbitMQProducerConfiguration>>();
+            _brokerConfiguration = new Mock<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>>();
         }
 
         [Test]
