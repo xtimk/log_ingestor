@@ -22,7 +22,7 @@ services:
   rabbitmq.allinone.local:
     container_name: "rabbitmq.allinone.local"
     hostname: "rabbitmq.allinone.local"
-    image: rabbitmq:3.8-management-alpine
+    image: rabbitmq:3.11-management
     environment:
         - RABBITMQ_DEFAULT_USER=guest
         - RABBITMQ_DEFAULT_PASS=guest
@@ -51,9 +51,19 @@ services:
      - InBrokerTopic=enriched_message_queue
      - StoragePathInContainer=/usr/share/log-ingestor/data
 
+  agent:
+    image: ${DOCKER_REGISTRY-}agent
+    build:
+      context: .
+      dockerfile: Agent/Dockerfile
+    networks:
+     - logingestor-net
+
+
 volumes:
   filesystem-storage:
 
 networks:
   logingestor-net:
+
 
