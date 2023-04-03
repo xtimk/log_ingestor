@@ -35,7 +35,6 @@ services:
     networks:
      - logingestor-net
 
-
   rabbitmq.allinone.local:
     container_name: "rabbitmq.allinone.local"
     hostname: "rabbitmq.allinone.local"
@@ -73,9 +72,10 @@ services:
     build:
       context: .
       dockerfile: Agent/Dockerfile
+    depends_on:
+      - "rabbitmq.allinone.local"
     networks:
      - logingestor-net
-
 
 volumes:
   filesystem-storage:
