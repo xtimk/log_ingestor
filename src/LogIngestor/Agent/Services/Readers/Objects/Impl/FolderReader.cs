@@ -11,7 +11,12 @@ namespace Agent.Services.Readers.Objects.Impl
             throw new NotImplementedException();
         }
 
-        public void Start()
+        public void Start(Guid guid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Stop()
         {
             throw new NotImplementedException();
         }

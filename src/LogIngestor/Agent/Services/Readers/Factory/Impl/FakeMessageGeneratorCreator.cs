@@ -6,9 +6,16 @@ namespace Agent.Services.Readers.Factory.Impl
 {
     public class FakeMessageGeneratorCreator : IReaderCreator
     {
+        private readonly IServiceProvider _serviceProvider;
+
+        public FakeMessageGeneratorCreator(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
         public IReader Create()
         {
-            return new FakeMessageGeneratorReader();
+            return (FakeMessageGeneratorReader)ActivatorUtilities.CreateInstance(_serviceProvider, typeof(FakeMessageGeneratorReader));
         }
     }
 }

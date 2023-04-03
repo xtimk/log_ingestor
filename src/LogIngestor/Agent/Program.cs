@@ -1,9 +1,13 @@
 using Agent.Configurations;
 using Agent.Models;
+using Agent.Services.JsonSerializer;
+using Agent.Services.JsonSerializer.Impl;
 using Agent.Services.MessageService;
 using Agent.Services.MessageService.Impl;
+using Agent.Services.Readers.Objects;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Serilog;
 
 namespace Agent
 {
@@ -12,6 +16,14 @@ namespace Agent
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            // Add serilog
+            var logger = new LoggerConfiguration()
+              .ReadFrom.Configuration(builder.Configuration)
+              .Enrich.FromLogContext()
+              .CreateLogger();
+            builder.Logging.ClearProviders();
+            builder.Logging.AddSerilog(logger);
 
             // Add services to the container.
 
@@ -23,14 +35,22 @@ namespace Agent
             //builder.Services.AddSingleton<LogIngestorServer>();
             builder.Services.Configure<LogIngestorServer>(builder.Configuration.GetSection("LogIngestorServer"));
 
+            // List of ireaders (threads). Use this to eventually stop readers.
+            builder.Services.AddSingleton<Dictionary<Guid, IReader>>();
+
             builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
             //builder.Services.AddScoped(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
+            builder.Services.AddSingleton(typeof(IJsonSerializer<>), typeof(SystemTextJsonSerializer<>));
+
 
             var app = builder.Build();
 
             var logIngestorServer = app.Services.GetRequiredService<IOptions<LogIngestorServer>>();
+
             var messageProducer = app.Services.GetRequiredService<IMessageProducer<BaseLogMessage>>();
             messageProducer.Configure(logIngestorServer.Value.Host);
+            var messageProducerString = app.Services.GetRequiredService<IMessageProducer<string>>();
+            messageProducerString.Configure(logIngestorServer.Value.Host);
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

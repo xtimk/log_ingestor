@@ -1,4 +1,5 @@
-﻿using RabbitMQ.Client;
+﻿using Agent.Services.JsonSerializer;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 using System.Text;
@@ -9,13 +10,15 @@ namespace Agent.Services.MessageService.Impl
     public class RabbitMQConsumer<T> : IMessageConsumer<T>
     {
         private readonly ILogger<RabbitMQConsumer<T>> _logger;
+        private readonly IJsonSerializer<T> _jsonSerializer;
         private string? _hostname;
 
         public event EventHandler<T>? OnMessageReceived;
 
-        public RabbitMQConsumer(ILogger<RabbitMQConsumer<T>> logger)
+        public RabbitMQConsumer(ILogger<RabbitMQConsumer<T>> logger, IJsonSerializer<T> jsonSerializer)
         {
             _logger = logger;
+            _jsonSerializer = jsonSerializer;
         }
 
         public void Configure(string hostname)
@@ -35,10 +38,15 @@ namespace Agent.Services.MessageService.Impl
             var _factory = new ConnectionFactory() { HostName = _hostname, DispatchConsumersAsync = false };
             IConnection connection = _factory.CreateConnection();
             IModel channel = connection.CreateModel();
+
+            var arguments = new Dictionary<string, object>
+            {
+                { "x-queue-type", "stream" }
+            };
             channel.QueueDeclare(queue: topic, durable: false, exclusive: false, autoDelete: false, arguments: null);
 
             // Don't dispatch a new message to a consumer until it has processed and acknowledged the previous one.
-            channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+            //channel.BasicQos(prefetchSize: 0, prefetchCount: 100, global: false);
 
             var consumer = new EventingBasicConsumer(channel);
             consumer.Registered += (model, body) =>
@@ -52,7 +60,8 @@ namespace Agent.Services.MessageService.Impl
                     var message = Encoding.UTF8.GetString(body.Body.ToArray());
                     _logger.LogDebug($"{baseLogMessage}Received a new message: {message}");
                     
-                    var deserializedMessage = JsonSerializer.Deserialize<T>(message);
+                    var deserializedMessage = _jsonSerializer.Deserialize(message);
+                    
 
                     if(deserializedMessage == null)
                     {

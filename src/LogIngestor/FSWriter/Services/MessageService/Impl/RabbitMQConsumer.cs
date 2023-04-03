@@ -1,22 +1,26 @@
 ﻿using FSWriter.Models;
+using FSWriter.Services.JsonSerializer;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 
 namespace FSWriter.Services.MessageService.Impl
 {
     public class RabbitMQConsumer<T> : IMessageConsumer<T> where T : Message
     {
         private readonly ILogger<RabbitMQConsumer<T>> _logger;
+        private readonly IJsonSerializer<T> _jsonSerializer;
         private string? _hostname;
 
         public event EventHandler<T>? OnMessageReceived;
 
-        public RabbitMQConsumer(ILogger<RabbitMQConsumer<T>> logger)
+        public RabbitMQConsumer(ILogger<RabbitMQConsumer<T>> logger, IJsonSerializer<T> jsonSerializer)
         {
             _logger = logger;
+            _jsonSerializer = jsonSerializer;
         }
 
         public void Configure(string hostname)
@@ -36,7 +40,13 @@ namespace FSWriter.Services.MessageService.Impl
             var _factory = new ConnectionFactory() { HostName = _hostname, DispatchConsumersAsync = false };
             IConnection connection = _factory.CreateConnection();
             IModel channel = connection.CreateModel();
+
+            var arguments = new Dictionary<string, object>
+            {
+                { "x-queue-type", "stream" }
+            };
             channel.QueueDeclare(queue: topic, durable: false, exclusive: false, autoDelete: false, arguments: null);
+            //channel.BasicQos(prefetchSize: 0, prefetchCount: 100, global: false);
 
             // Don't dispatch a new message to a consumer until it has processed and acknowledged the previous one.
             //channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
@@ -53,7 +63,7 @@ namespace FSWriter.Services.MessageService.Impl
                     var message = Encoding.UTF8.GetString(body.Body.ToArray());
                     _logger.LogDebug($"{baseLogMessage}Received a new message: {message}");
                     
-                    var deserializedMessage = JsonSerializer.Deserialize<T>(message);
+                    var deserializedMessage = _jsonSerializer.Deserialize(message);
 
                     if(deserializedMessage == null)
                     {

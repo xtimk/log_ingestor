@@ -2,6 +2,8 @@ using BaseEnricher.Configurations;
 using BaseEnricher.Constants;
 using BaseEnricher.Services.ConfigurationBuilder;
 using BaseEnricher.Services.DateTimeProvider;
+using BaseEnricher.Services.JsonSerializer;
+using BaseEnricher.Services.JsonSerializer.Impl;
 using BaseEnricher.Services.MessageBackgroundProcessor;
 using BaseEnricher.Services.MessageBrokerConfigurationBuilder.Impl;
 using BaseEnricher.Services.MessageProcessor.Commands;
@@ -39,6 +41,8 @@ namespace BaseEnricher
 
             // Add singleton that provides current time. This is needed in order to unit test things correctly
             builder.Services.AddSingleton<IDateTimeNowProvider, DateTimeNowProvider>();
+
+            builder.Services.AddSingleton(typeof(IJsonSerializer<>), typeof(SystemTextJsonSerializer<>));
 
             // Add singletons containing IMessageBrokerConfigurations for the producer and the consumer
             AddMessageBrokerConfigurationsAsSingletons(builder);

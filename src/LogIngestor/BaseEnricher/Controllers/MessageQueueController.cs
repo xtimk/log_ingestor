@@ -1,6 +1,7 @@
 ﻿using BaseEnricher.Configurations;
 using BaseEnricher.Constants;
 using BaseEnricher.Models;
+using BaseEnricher.Services.JsonSerializer;
 using BaseEnricher.Services.MessageBackgroundProcessor;
 using BaseEnricher.Services.MessageService;
 using Microsoft.AspNetCore.Mvc;
@@ -14,11 +15,13 @@ namespace BaseEnricher.Controllers
     {
         private readonly ILogger<MessageQueueController> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IJsonSerializer<BaseLogMessage> _jsonSerializer;
 
-        public MessageQueueController(ILogger<MessageQueueController> logger, IServiceProvider serviceProvider)
+        public MessageQueueController(ILogger<MessageQueueController> logger, IServiceProvider serviceProvider, IJsonSerializer<BaseLogMessage> jsonSerializer)
         {
             _logger = logger;
             _serviceProvider = serviceProvider;
+            _jsonSerializer = jsonSerializer;
         }
 
         // Method just to test workflow: it adds a simulated message in the expected in_queue.
@@ -102,7 +105,7 @@ namespace BaseEnricher.Controllers
         }
         private void Execute(object? obj, BaseLogMessage message)
         {
-            var serializedMsg = JsonSerializer.Serialize(message);
+            var serializedMsg = _jsonSerializer.Serialize(message);
             _logger.LogInformation($"API: Queue consumer has received a new message: {serializedMsg}");
         }
     }

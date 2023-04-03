@@ -18,6 +18,23 @@ services:
     networks:
      - logingestor-net
 
+  baseenricher-2:
+    image: ${DOCKER_REGISTRY-}baseenricher
+    build:
+      context: .
+      dockerfile: BaseEnricher/Dockerfile
+    environment:
+      - InBrokerHostname=rabbitmq.allinone.local
+      - InBrokerPort=5672
+      - InBrokerTopic=base_message_queue
+      - OutBrokerHostname=rabbitmq.allinone.local
+      - OutBrokerPort=5672
+      - OutBrokerTopic=enriched_message_queue
+    depends_on:
+      - "rabbitmq.allinone.local"
+    networks:
+     - logingestor-net
+
 
   rabbitmq.allinone.local:
     container_name: "rabbitmq.allinone.local"

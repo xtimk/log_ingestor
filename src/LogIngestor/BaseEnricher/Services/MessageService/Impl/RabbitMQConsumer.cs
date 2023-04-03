@@ -1,4 +1,5 @@
 ﻿using BaseEnricher.Models;
+using BaseEnricher.Services.JsonSerializer;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
@@ -10,6 +11,7 @@ namespace BaseEnricher.Services.MessageService.Impl
     public class RabbitMQConsumer<T> : IMessageConsumer<T> where T : Message
     {
         private readonly ILogger<RabbitMQConsumer<T>> _logger;
+        private readonly IJsonSerializer<T> _jsonSerializer;
         private string? _hostname;
         private ConnectionFactory _factory;
         private IConnection _connection;
@@ -17,9 +19,10 @@ namespace BaseEnricher.Services.MessageService.Impl
 
         public event EventHandler<T>? OnMessageReceived;
 
-        public RabbitMQConsumer(ILogger<RabbitMQConsumer<T>> logger)
+        public RabbitMQConsumer(ILogger<RabbitMQConsumer<T>> logger, IJsonSerializer<T> jsonSerializer)
         {
             _logger = logger;
+            _jsonSerializer = jsonSerializer;
         }
 
         public void Configure(string hostname)
@@ -40,7 +43,12 @@ namespace BaseEnricher.Services.MessageService.Impl
 
             var baseLogMessage = $"RabbitMQ Consumer[{Guid.NewGuid()}]: ";
 
+            var arguments = new Dictionary<string, object>
+            {
+                { "x-queue-type", "stream" }
+            };
             _channel.QueueDeclare(queue: topic, durable: false, exclusive: false, autoDelete: false, arguments: null);
+            //_channel.BasicQos(prefetchSize: 0, prefetchCount: 100, global: false);
 
             // Don't dispatch a new message to a consumer until it has processed and acknowledged the previous one.
             //_channel.BasicQos(prefetchSize: 0, prefetchCount: 100, global: false);
@@ -57,7 +65,7 @@ namespace BaseEnricher.Services.MessageService.Impl
                     var message = Encoding.UTF8.GetString(body.Body.ToArray());
                     _logger.LogDebug($"{baseLogMessage}Received a new message: {message}");
                     
-                    var deserializedMessage = JsonSerializer.Deserialize<T>(message);
+                    var deserializedMessage = _jsonSerializer.Deserialize(message);
 
                     if(deserializedMessage == null)
                     {

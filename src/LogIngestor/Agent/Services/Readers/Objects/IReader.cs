@@ -5,6 +5,7 @@ namespace Agent.Services.Readers.Objects
     public interface IReader
     {
         event EventHandler<List<BaseLogMessage>> OnNewLines;
-        public void Start();
+        public void Start(Guid guid);
+        public void Stop();
     }
 }

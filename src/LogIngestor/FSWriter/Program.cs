@@ -4,6 +4,8 @@ using FSWriter.Constants;
 using FSWriter.Services.DateTimeProvider;
 using FSWriter.Services.FileWriter;
 using FSWriter.Services.FileWriter.Impl;
+using FSWriter.Services.JsonSerializer;
+using FSWriter.Services.JsonSerializer.Impl;
 using FSWriter.Services.MessageBackgroundProcessor;
 using FSWriter.Services.MessageBrokerConfigurationBuilder.Impl;
 using FSWriter.Services.MessageService;
@@ -38,6 +40,8 @@ namespace FSWriter
             });
 
             builder.Services.AddSingleton<IDateTimeNowProvider, DateTimeNowProvider>();
+
+            builder.Services.AddSingleton(typeof(IJsonSerializer<>), typeof(SystemTextJsonSerializer<>));
 
             builder.Services.AddSingleton<IMessageProcessorBackground, MessageProcessor>();
             builder.Services.AddHostedService(sp => sp.GetRequiredService<IMessageProcessorBackground>());
