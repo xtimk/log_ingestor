@@ -1,8 +1,10 @@
 ﻿using BaseEnricher.Configurations;
 using BaseEnricher.Controllers;
+using BaseEnricher.Services.JsonSerializer;
 using BaseEnricher.Services.MessageService;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using NUnit.Framework.Constraints;
 
 namespace BaseEnricher.UnitTests.Api
 {
@@ -37,7 +39,10 @@ namespace BaseEnricher.UnitTests.Api
 
             _serviceProvider = services.BuildServiceProvider();
 
-            var messageQueueApi = new MessageQueueController(_logger.Object, _serviceProvider);
+            var jsonSerializerMock = new Mock<IJsonSerializer<BaseLogMessage>>();
+            jsonSerializerMock.Setup(x => x.Serialize(It.IsAny<BaseLogMessage>())).Returns("a_serialized_fake");
+
+            var messageQueueApi = new MessageQueueController(_logger.Object, _serviceProvider, jsonSerializerMock.Object);
 
             // act
             var action = messageQueueApi.Send("a message");
