@@ -23,7 +23,7 @@ The configuration I used for testing is the following (all microservices runs in
  - 1 instance of `BaseEnricher`
  - 1 instance of `FSWriter`
  - 1 instance of `RabbitMQ` (no clustering)
- - 1 instance of `Kafka` (no clustering)
+ - 1 instance of `Kafka` (no clustering) + `ZooKeeper` + `Kafka-ui` (`provectuslab`) for monitoring
  
  In the following table I reported the performance i measured.
  
