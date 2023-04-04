@@ -8,6 +8,7 @@ I created this project mainly to practise with microservices/distributed archite
 |-|-|
 |BaseEnricher|[![base-enricher](https://github.com/xtimk/log_ingestor/actions/workflows/baseenricher.yml/badge.svg?branch=main&event=push)](https://github.com/xtimk/log_ingestor/actions/workflows/baseenricher.yml)
 |FSWriter|[![fs-writer](https://github.com/xtimk/log_ingestor/actions/workflows/fs-writer.yml/badge.svg?branch=main&event=push)](https://github.com/xtimk/log_ingestor/actions/workflows/fs-writer.yml)
+|Agent|[![agent](https://github.com/xtimk/log_ingestor/actions/workflows/agent.yml/badge.svg?branch=main&event=push)](https://github.com/xtimk/log_ingestor/actions/workflows/agent.yml)
 
 *Microservices are build and tested using .NET Core 6.0.401 on Ubuntu, Windows, MacOS*
 
