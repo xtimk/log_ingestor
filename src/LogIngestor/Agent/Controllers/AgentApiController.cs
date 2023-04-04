@@ -1,5 +1,6 @@
 ﻿using Agent.Configurations;
 using Agent.Models;
+using Agent.Services.GuidProvider;
 using Agent.Services.MessageService;
 using Agent.Services.Readers.Factory.Impl;
 using Agent.Services.Readers.Objects;
@@ -15,35 +16,36 @@ namespace Agent.Controllers
     {
         private readonly ILogger<AgentApiController> _logger;
         private readonly IMessageProducer<BaseLogMessage> _messageProducer;
-        private readonly IMessageProducer<string> _messageProducerString;
         private readonly IOptions<LogIngestorServer> _logIngestorServer;
         private readonly Dictionary<Guid, IReader> _activeReaders;
+        private readonly IGuidProvider _guidProvider;
         private readonly IServiceProvider _serviceProvider;
 
         public AgentApiController(
                 ILogger<AgentApiController> logger, 
                 IMessageProducer<BaseLogMessage> messageProducer,
-                IMessageProducer<string> messageProducerString,
                 IOptions<LogIngestorServer> logIngestorServer,
                 Dictionary<Guid, IReader> activeReaders,
+                IGuidProvider guidProvider,
                 IServiceProvider serviceProvider)
         {
             _logger = logger;
             _messageProducer = messageProducer;
-            _messageProducerString = messageProducerString;
             _logIngestorServer = logIngestorServer;
             _activeReaders = activeReaders;
+            _guidProvider = guidProvider;
             _serviceProvider = serviceProvider;
         }
 
         [HttpGet]
         public IActionResult StartFakeReader()
         {
+            _logger.LogInformation("Required start of fake log reader");
             var fakeCreator = new FakeMessageGeneratorCreator(_serviceProvider);
             var fakeReader = fakeCreator.Create();
 
             fakeReader.OnNewLines += HandleNewLines;
-            var threadGuid = Guid.NewGuid();
+            var threadGuid = _guidProvider.Create();
             Task.Run(() => fakeReader.Start(threadGuid));
             _activeReaders.Add(threadGuid, fakeReader);
             return Ok($"Started reader. Guid: {threadGuid}");
@@ -52,12 +54,13 @@ namespace Agent.Controllers
         [HttpGet]
         public IActionResult StopReader(string guid)
         {
-            var guidToSearch = new Guid(guid);
-            if (!_activeReaders.TryGetValue(guidToSearch, out IReader? fakeReader))
+            _logger.LogInformation("Required stop of reader");
+            var guidToSearch = _guidProvider.Create(guid);
+            if (!_activeReaders.TryGetValue(guidToSearch, out IReader? reader))
             {
                 return BadRequest($"Guid {guidToSearch} not found.");
             }
-            fakeReader.Stop();
+            reader.Stop();
             _activeReaders.Remove(guidToSearch);
             return Ok($"Requested stop for reader {guidToSearch}");
         }

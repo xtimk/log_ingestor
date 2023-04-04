@@ -1,5 +1,7 @@
 using Agent.Configurations;
 using Agent.Models;
+using Agent.Services.GuidProvider;
+using Agent.Services.GuidProvider.Impl;
 using Agent.Services.JsonSerializer;
 using Agent.Services.JsonSerializer.Impl;
 using Agent.Services.MessageService;
@@ -37,6 +39,8 @@ namespace Agent
 
             // List of ireaders (threads). Use this to eventually stop readers.
             builder.Services.AddSingleton<Dictionary<Guid, IReader>>();
+
+            builder.Services.AddSingleton<IGuidProvider, GuidProvider>();
 
             //builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
             builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(KafkaProducer<>));
