@@ -1,5 +1,6 @@
 ﻿using BaseEnricher.Services.JsonSerializer;
 using Confluent.Kafka;
+using Confluent.Kafka.Admin;
 
 namespace BaseEnricher.Services.MessageService.Impl
 {
@@ -23,7 +24,7 @@ namespace BaseEnricher.Services.MessageService.Impl
         {
             _config = new ConsumerConfig { 
                 BootstrapServers = $"{hostname}:{port}",
-                GroupId = "foo",
+                GroupId = "base-enricher",
                 AutoOffsetReset = AutoOffsetReset.Earliest
             };
             _consumer = new ConsumerBuilder<Null, string>(_config).Build();
@@ -31,6 +32,44 @@ namespace BaseEnricher.Services.MessageService.Impl
 
         public void Subscribe(string topic)
         {
+            // eventually create topic
+            using (var adminClient = new AdminClientBuilder(new AdminClientConfig { BootstrapServers = _config.BootstrapServers }).Build())
+            {
+                var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
+                var topicsMetadata = metadata.Topics;
+                var topicNames = metadata.Topics.Select(a => a.Topic).ToList();
+
+                if(topicNames.Contains(topic))
+                {
+                    var topicsToDelete = new List<string>
+                    {
+                        topic
+                    };
+                    adminClient.DeleteTopicsAsync(topicsToDelete).Wait();
+                    Thread.Sleep(1000);
+                }
+                var retentionMs = 1 * 60 * 60 * 1000; // 1 hour
+                var topicConfigs = new Dictionary<string, string>
+                {
+                    { "retention.ms", retentionMs.ToString() },
+                    { "delete.retention.ms", retentionMs.ToString() }
+                };
+                try
+                {
+                    adminClient.CreateTopicsAsync(new TopicSpecification[] {
+                        new TopicSpecification { 
+                            Name = topic, ReplicationFactor = 1, 
+                            NumPartitions = 1, 
+                            Configs = topicConfigs
+                        }
+                    }).Wait();
+                }
+                catch (CreateTopicsException e)
+                {
+                    _logger.LogError($"An error occured creating topic {e.Results[0].Topic}: {e.Results[0].Error.Reason}");
+                }
+            }
+
             _consumer.Subscribe(topic);
             while(!_cancelled)
             {
