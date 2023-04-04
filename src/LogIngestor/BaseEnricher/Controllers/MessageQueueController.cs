@@ -44,8 +44,8 @@ namespace BaseEnricher.Controllers
             };
 
             var brokerProducerConfig = _serviceProvider.GetRequiredService<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>>();
-            messageProducer.Configure(brokerProducerConfig.Hostname);
-            messageProducer.WriteToQueue(QueueNames.QUEUE_BASE_MESSAGE_READ, logMessage);
+            messageProducer.Configure(brokerProducerConfig.Hostname, brokerProducerConfig.Port);
+            messageProducer.Publish(QueueNames.QUEUE_BASE_MESSAGE_READ, logMessage);
             return Ok(message);
         }
 
@@ -68,10 +68,10 @@ namespace BaseEnricher.Controllers
             };
 
             var brokerProducerConfig = _serviceProvider.GetRequiredService<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>>();
-            messageProducer.Configure(brokerProducerConfig.Hostname);
+            messageProducer.Configure(brokerProducerConfig.Hostname, brokerProducerConfig.Port);
             for (int i = 0; i < number_to_send; i++)
             {
-                messageProducer.WriteToQueue(QueueNames.QUEUE_BASE_MESSAGE_READ, logMessage);
+                messageProducer.Publish(QueueNames.QUEUE_BASE_MESSAGE_READ, logMessage);
             }
             return Ok(message);
         }
@@ -89,6 +89,8 @@ namespace BaseEnricher.Controllers
         public IActionResult SubscribeToChannel()
         {
             var hostname = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_HOSTNAME);
+            var port = Environment.GetEnvironmentVariable(ConfigurationKeyConstant.ENV_RABBITMQ_OUT_PORT);
+            var i_port = int.Parse(port);
             if (hostname == null)
             {
                 _logger.LogError("API: can't retrieve hostname of queue broker from env variable");
@@ -96,7 +98,7 @@ namespace BaseEnricher.Controllers
             }
 
             var messageConsumer2 = _serviceProvider.GetRequiredService<IMessageConsumer<BaseLogMessage>>();
-            messageConsumer2.Configure(hostname);
+            messageConsumer2.Configure(hostname, i_port);
 
             messageConsumer2.Subscribe(QueueNames.QUEUE_BASE_MESSAGE_READ);
             messageConsumer2.OnMessageReceived += Execute;

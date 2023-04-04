@@ -28,15 +28,15 @@ namespace FSWriter.Services.MessageService.Impl
 
         }
 
-        public void Configure(string hostname)
+        public void Configure(string hostname, int port)
         {
-            _factory = new ConnectionFactory() { HostName = hostname };
+            _factory = new ConnectionFactory() { HostName = hostname, Port = port };
             _connection = _factory.CreateConnection();
             _channel = _connection.CreateModel();
             _logger.LogInformation($"{_baseLogMessage}Configured. Queue host: {hostname}");
         }
 
-        public bool WriteToQueue(string topic, T message)
+        public bool Publish(string topic, T message)
         {
             if (_factory == null)
             {

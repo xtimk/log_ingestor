@@ -14,6 +14,7 @@ namespace FSWriter.Services.MessageService.Impl
         private readonly ILogger<RabbitMQConsumer<T>> _logger;
         private readonly IJsonSerializer<T> _jsonSerializer;
         private string? _hostname;
+        private int _port;
 
         public event EventHandler<T>? OnMessageReceived;
 
@@ -23,9 +24,10 @@ namespace FSWriter.Services.MessageService.Impl
             _jsonSerializer = jsonSerializer;
         }
 
-        public void Configure(string hostname)
+        public void Configure(string hostname, int port)
         {
             _hostname = hostname;
+            _port = port;
         }
 
         public void Subscribe(string topic)
@@ -37,7 +39,7 @@ namespace FSWriter.Services.MessageService.Impl
 
             var baseLogMessage = $"RabbitMQ Consumer[{Guid.NewGuid()}]: ";
 
-            var _factory = new ConnectionFactory() { HostName = _hostname, DispatchConsumersAsync = false };
+            var _factory = new ConnectionFactory() { HostName = _hostname, Port = _port, DispatchConsumersAsync = false };
             IConnection connection = _factory.CreateConnection();
             IModel channel = connection.CreateModel();
 

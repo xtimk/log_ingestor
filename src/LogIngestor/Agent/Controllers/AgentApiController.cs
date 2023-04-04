@@ -41,11 +41,11 @@ namespace Agent.Controllers
         {
             var fakeCreator = new FakeMessageGeneratorCreator(_serviceProvider);
             var fakeReader = fakeCreator.Create();
+
             fakeReader.OnNewLines += HandleNewLines;
             var threadGuid = Guid.NewGuid();
             Task.Run(() => fakeReader.Start(threadGuid));
             _activeReaders.Add(threadGuid, fakeReader);
-            //fakeReader.Start();
             return Ok($"Started reader. Guid: {threadGuid}");
         }
 
@@ -62,13 +62,11 @@ namespace Agent.Controllers
             return Ok($"Requested stop for reader {guidToSearch}");
         }
 
-        private void HandleNewLines(object? o, List<BaseLogMessage> lines) {
-            //var firstLine = JsonSerializer.Serialize(lines.First());
-            //_logger.LogInformation($"Received {lines.Count} lines. First message is: {firstLine}");
+        private void HandleNewLines(object? o, List<BaseLogMessage> lines)
+        {
             foreach (var item in lines)
             {
-                _messageProducer.WriteToQueue(_logIngestorServer.Value.Topic, item);
-                //_messageProducerString.WriteToQueue("test-to-delete", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+                _messageProducer.Publish(_logIngestorServer.Value.Topic, item);
             }
         }
     }

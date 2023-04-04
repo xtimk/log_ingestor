@@ -26,7 +26,7 @@ namespace Agent.Services.MessageService.Impl
             _logger.LogInformation($"{_baseLogMessage}Created. Unique id: {_consumer_guid}");
         }
 
-        public void Configure(string hostname)
+        public void Configure(string hostname, string? port)
         {
             _factory = new ConnectionFactory() { HostName = hostname };
             _logger.LogInformation($"{_baseLogMessage}Configured. Queue host: {hostname}");
@@ -34,7 +34,22 @@ namespace Agent.Services.MessageService.Impl
             _channel = _connection.CreateModel();
         }
 
-        public bool WriteToQueue(string topic, T message)
+        public Task PublishAsync(string topic, T message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task PublishAsyncBatch(string topic, IList<T> message)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void PublishBatch(string topic, IList<T> messages)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Publish(string topic, T message)
         {
             if (_factory == null)
             {

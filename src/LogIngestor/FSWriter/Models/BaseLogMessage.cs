@@ -3,7 +3,7 @@
     public class BaseLogMessage : Message
     {
         public string? Message { get; set; }
-        public AgentMetaData? AgentMetaData { get; set; }
+        public AgentMetaData AgentMetaData { get; set; }
 
         public EnrichedLogMessage CastToEnrichedLogMessage()
         {

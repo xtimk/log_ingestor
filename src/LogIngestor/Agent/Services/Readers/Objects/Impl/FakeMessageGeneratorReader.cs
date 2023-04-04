@@ -35,9 +35,10 @@ namespace Agent.Services.Readers.Objects.Impl
         {
             int numberOfGeneratedMessages = 0;
             var result = new List<BaseLogMessage>();
+            var batchSize = 5000;
             while (_running)
             {
-                for (int j = 0; j < 1000; j++)
+                for (int j = 0; j < batchSize; j++)
                 {
                     result.Add(new BaseLogMessage()
                     {
@@ -52,9 +53,10 @@ namespace Agent.Services.Readers.Objects.Impl
                     });
                     numberOfGeneratedMessages++;
                 }
+                _logger.LogInformation($"FakeReader <{_guid}> generated a batch of {batchSize} messages. Total until now {numberOfGeneratedMessages}");
                 OnNewLines?.Invoke(this, result);
                 result.Clear();
-                Thread.Sleep(100);
+                Thread.Sleep(200);
             }
             _logger.LogInformation($"FakeReader <{_guid}> stopped");
             _logger.LogInformation($"FakeReader <{_guid}> generated {numberOfGeneratedMessages} messages");

@@ -25,15 +25,20 @@ namespace BaseEnricher.Services.MessageService.Impl
             _logger.LogInformation($"{_baseLogMessage}Created. Unique id: {_consumer_guid}");
         }
 
-        public void Configure(string hostname)
+        public void Configure(string hostname, int port)
         {
-            _factory = new ConnectionFactory() { HostName = hostname };
+            _factory = new ConnectionFactory() { HostName = hostname, Port = port };
             _logger.LogInformation($"{_baseLogMessage}Configured. Queue host: {hostname}");
             _connection = _factory.CreateConnection();
             _channel = _connection.CreateModel();
         }
 
-        public bool WriteToQueue(string topic, T message)
+        public void PublishBatch(string topic, IList<T> messages)
+        {
+            throw new NotImplementedException("Cant batch publish with RammitMQ broker.");
+        }
+
+        public bool Publish(string topic, T message)
         {
             if (_factory == null)
             {

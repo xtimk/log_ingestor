@@ -2,7 +2,8 @@
 {
     public interface IMessageProducer<T>
     {
-        public void Configure(string hostname);
-        public bool WriteToQueue(string topic, T message);
+        public void Configure(string hostname, int port);
+        public bool Publish(string topic, T message);
+        public void PublishBatch(string topic, IList<T> messages);
     }
 }

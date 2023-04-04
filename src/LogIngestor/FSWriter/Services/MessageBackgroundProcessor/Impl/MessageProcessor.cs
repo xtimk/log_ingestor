@@ -19,6 +19,8 @@ namespace FSWriter.Services.MessageBackgroundProcessor
         private string _baseStoragePath;
 
         private int _readedEvents;
+        private IMessageBrokerConfiguration _input_broker_conf;
+        private IFileWriterConfiguration _storage_basepath;
 
         public MessageProcessor(ILogger<MessageProcessor> logger, IServiceProvider serviceProvider)
         {
@@ -35,6 +37,8 @@ namespace FSWriter.Services.MessageBackgroundProcessor
 
         public void Configure(IMessageBrokerConfiguration input_broker_conf, IFileWriterConfiguration storage_basepath)
         {
+            _input_broker_conf = input_broker_conf;
+            _storage_basepath = storage_basepath;
             _in_broker_hostname = input_broker_conf.Hostname;
             _in_broker_topic = input_broker_conf.Topic;
             _baseStoragePath = storage_basepath.BasePath;
@@ -70,15 +74,15 @@ namespace FSWriter.Services.MessageBackgroundProcessor
             using IServiceScope scope = _serviceProvider.CreateScope();
 
             var messageConsumer = scope.ServiceProvider.GetRequiredService<IMessageConsumer<EnrichedLogMessage>>();
-            messageConsumer.Configure(_in_broker_hostname);
+            messageConsumer.Configure(_input_broker_conf.Hostname, _input_broker_conf.Port);
+            messageConsumer.OnMessageReceived += ExecuteAction;
             messageConsumer.Subscribe(_in_broker_topic);
 
-            messageConsumer.OnMessageReceived += ExecuteAction;
 
             await Task.CompletedTask;
         }
 
-        [Obsolete("Checkout: try to specify BaseLogMessage as parameter, see what happens.")]
+        //[Obsolete("Checkout: try to specify BaseLogMessage as parameter, see what happens.")]
         private void ExecuteAction(object? obj, EnrichedLogMessage message)
         {
             if (_in_broker_hostname == null || _in_broker_topic == null || _baseStoragePath == null)

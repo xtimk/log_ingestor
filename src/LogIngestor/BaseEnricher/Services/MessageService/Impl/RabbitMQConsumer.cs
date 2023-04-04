@@ -25,10 +25,10 @@ namespace BaseEnricher.Services.MessageService.Impl
             _jsonSerializer = jsonSerializer;
         }
 
-        public void Configure(string hostname)
+        public void Configure(string hostname, int port)
         {
             _hostname = hostname;
-            _factory = new ConnectionFactory() { HostName = _hostname, DispatchConsumersAsync = false };
+            _factory = new ConnectionFactory() { HostName = _hostname, Port = port, DispatchConsumersAsync = false };
             _connection = _factory.CreateConnection();
             _channel = _connection.CreateModel();
 

@@ -22,6 +22,8 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
         private string? _out_broker_topic;
 
         private int _readedEvents;
+        private IMessageBrokerConfiguration _input_broker_conf;
+        private IMessageBrokerConfiguration _output_broker_conf;
 
         public MessageProcessor(ILogger<MessageProcessor> logger, IServiceProvider serviceProvider)
         {
@@ -39,11 +41,14 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
 
         public void Configure(IMessageBrokerConfiguration input_broker_conf, IMessageBrokerConfiguration output_broker_conf)
         {
+            _input_broker_conf = input_broker_conf;
+            _output_broker_conf = output_broker_conf;
+
             _in_broker_hostname = input_broker_conf.Hostname;
             _in_broker_topic = input_broker_conf.Topic;
             _out_broker_hostname = output_broker_conf.Hostname;
             _out_broker_topic = output_broker_conf.Topic;
-            _messageProducer.Configure(output_broker_conf.Hostname);
+            _messageProducer.Configure(output_broker_conf.Hostname, output_broker_conf.Port);
             _logger.LogInformation($"{_baseLogMessage}Configured. Input from broker: {_in_broker_hostname}, topic {_in_broker_topic}. Output to broker: {_out_broker_hostname}, topic {_out_broker_topic}");
         }
 
@@ -75,11 +80,11 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
             using IServiceScope scope = _serviceProvider.CreateScope();
 
             var messageConsumer = scope.ServiceProvider.GetRequiredService<IMessageConsumer<BaseLogMessage>>();
-            messageConsumer.Configure(_in_broker_hostname);
-
-            messageConsumer.Subscribe(_in_broker_topic);
+            messageConsumer.Configure(_input_broker_conf.Hostname, _input_broker_conf.Port);
 
             messageConsumer.OnMessageReceived += ExecuteAction;
+            messageConsumer.Subscribe(_in_broker_topic);
+
 
             await Task.CompletedTask;
         }
@@ -97,7 +102,7 @@ namespace BaseEnricher.Services.MessageBackgroundProcessor
                 _logger.LogDebug($"{_baseLogMessage}Add date to message: {message}");
 
                 var enrichedMessage = addDateCommand.Execute(message);
-                _messageProducer.WriteToQueue(_out_broker_topic, enrichedMessage);
+                _messageProducer.Publish(_out_broker_topic, enrichedMessage);
 
                 _readedEvents++;
             }

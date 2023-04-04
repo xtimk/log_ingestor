@@ -6,7 +6,7 @@
     <ProjectGuid>268418c4-ba0e-4ee0-a796-d7e8a2457dd1</ProjectGuid>
     <DockerLaunchAction>LaunchBrowser</DockerLaunchAction>
     <DockerServiceUrl>{Scheme}://localhost:{ServicePort}/swagger</DockerServiceUrl>
-    <DockerServiceName>baseenricher</DockerServiceName>
+    <DockerServiceName>agent</DockerServiceName>
   </PropertyGroup>
   <ItemGroup>
     <None Include="docker-compose.override.yml">

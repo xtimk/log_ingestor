@@ -38,7 +38,8 @@ namespace Agent
             // List of ireaders (threads). Use this to eventually stop readers.
             builder.Services.AddSingleton<Dictionary<Guid, IReader>>();
 
-            builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
+            //builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
+            builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(KafkaProducer<>));
             //builder.Services.AddScoped(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
             builder.Services.AddSingleton(typeof(IJsonSerializer<>), typeof(SystemTextJsonSerializer<>));
 
@@ -48,9 +49,9 @@ namespace Agent
             var logIngestorServer = app.Services.GetRequiredService<IOptions<LogIngestorServer>>();
 
             var messageProducer = app.Services.GetRequiredService<IMessageProducer<BaseLogMessage>>();
-            messageProducer.Configure(logIngestorServer.Value.Host);
+            messageProducer.Configure(logIngestorServer.Value.Host, logIngestorServer.Value.Port);
             var messageProducerString = app.Services.GetRequiredService<IMessageProducer<string>>();
-            messageProducerString.Configure(logIngestorServer.Value.Host);
+            messageProducerString.Configure(logIngestorServer.Value.Host, logIngestorServer.Value.Port);
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

@@ -7,33 +7,39 @@ services:
       context: .
       dockerfile: BaseEnricher/Dockerfile
     environment:
-      - InBrokerHostname=rabbitmq.allinone.local
-      - InBrokerPort=5672
+      #- InBrokerHostname=rabbitmq.allinone.local
+      #- InBrokerPort=5672
+      #- InBrokerTopic=base_message_queue
+      #- OutBrokerHostname=rabbitmq.allinone.local
+      #- OutBrokerPort=5672
+      #- OutBrokerTopic=enriched_message_queue
+      - InBrokerHostname=kafka
+      - InBrokerPort=9092
       - InBrokerTopic=base_message_queue
-      - OutBrokerHostname=rabbitmq.allinone.local
-      - OutBrokerPort=5672
+      - OutBrokerHostname=kafka
+      - OutBrokerPort=9092
       - OutBrokerTopic=enriched_message_queue
     depends_on:
       - "rabbitmq.allinone.local"
-    networks:
-     - logingestor-net
+    #networks:
+    # - logingestor-net
 
-  baseenricher-2:
-    image: ${DOCKER_REGISTRY-}baseenricher
-    build:
-      context: .
-      dockerfile: BaseEnricher/Dockerfile
-    environment:
-      - InBrokerHostname=rabbitmq.allinone.local
-      - InBrokerPort=5672
-      - InBrokerTopic=base_message_queue
-      - OutBrokerHostname=rabbitmq.allinone.local
-      - OutBrokerPort=5672
-      - OutBrokerTopic=enriched_message_queue
-    depends_on:
-      - "rabbitmq.allinone.local"
-    networks:
-     - logingestor-net
+  #baseenricher-2:
+  #  image: ${DOCKER_REGISTRY-}baseenricher
+  #  build:
+  #    context: .
+  #    dockerfile: BaseEnricher/Dockerfile
+  #  environment:
+  #    - InBrokerHostname=rabbitmq.allinone.local
+  #    - InBrokerPort=5672
+  #    - InBrokerTopic=base_message_queue
+  #    - OutBrokerHostname=rabbitmq.allinone.local
+  #    - OutBrokerPort=5672
+  #    - OutBrokerTopic=enriched_message_queue
+  #  depends_on:
+  #    - "rabbitmq.allinone.local"
+    #networks:
+    # - logingestor-net
 
   rabbitmq.allinone.local:
     container_name: "rabbitmq.allinone.local"
@@ -47,8 +53,8 @@ services:
         - '5672:5672'
         # HTTP management UI
         - '15672:15672'
-    networks:
-     - logingestor-net
+    #networks:
+    # - logingestor-net
 
   fswriter:
     image: ${DOCKER_REGISTRY-}fswriter
@@ -57,13 +63,16 @@ services:
       dockerfile: FSWriter/Dockerfile
     depends_on:
       - "rabbitmq.allinone.local"
-    networks:
-     - logingestor-net
+    #networks:
+    # - logingestor-net
     volumes:
      - filesystem-storage:/usr/share/log-ingestor/data
     environment:
-     - InBrokerHostname=rabbitmq.allinone.local
-     - InBrokerPort=5672
+     #- InBrokerHostname=rabbitmq.allinone.local
+     #- InBrokerPort=5672
+     #- InBrokerTopic=enriched_message_queue
+     - InBrokerHostname=kafka
+     - InBrokerPort=9092
      - InBrokerTopic=enriched_message_queue
      - StoragePathInContainer=/usr/share/log-ingestor/data
 
@@ -74,13 +83,62 @@ services:
       dockerfile: Agent/Dockerfile
     depends_on:
       - "rabbitmq.allinone.local"
-    networks:
-     - logingestor-net
+      - "kafka"
+    #networks:
+    # - logingestor-net
+    environment:
+      - OutBrokerHostname=kafka
+      - OutBrokerPort=9092
+      - OutBrokerTopic=base_message_queue
+
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    #networks:
+    # - logingestor-net
+
+  kafka:
+    image: docker.io/bitnami/kafka:latest
+    ports:
+      - "9092:9092"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
+    #networks:
+    # - logingestor-net
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8080:8080
+    environment:
+      - DYNAMIC_CONFIG_ENABLED=true
+    #volumes:
+    #  #- ~/kui/config.yml:/etc/kafkaui/dynamic_config.yaml
+    #  - kuiconfig:/etc/kafkaui/dynamic_config.yaml
+    #networks:
+    # - logingestor-net
 
 volumes:
   filesystem-storage:
+  kuiconfig:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
 
-networks:
-  logingestor-net:
+
+#networks:
+#  logingestor-net:
 
 

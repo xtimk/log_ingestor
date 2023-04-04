@@ -28,8 +28,8 @@ namespace BaseEnricher.UnitTests.Api
             // arrange
             IServiceCollection services = new ServiceCollection();
 
-            _messageProducer.Setup(x => x.WriteToQueue(It.IsAny<string>(), It.IsAny<BaseLogMessage>())).Returns(true);
-            _messageProducer.Setup(x => x.Configure(It.IsAny<string>()));
+            _messageProducer.Setup(x => x.Publish(It.IsAny<string>(), It.IsAny<BaseLogMessage>())).Returns(true);
+            _messageProducer.Setup(x => x.Configure(It.IsAny<string>(), It.IsAny<int>()));
             services.AddSingleton(x => _messageProducer.Object);
 
             _brokerConfiguration.Setup(x => x.Hostname).Returns("a_hostname");

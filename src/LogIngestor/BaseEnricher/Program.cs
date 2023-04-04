@@ -51,8 +51,10 @@ namespace BaseEnricher
             builder.Services.AddScoped<IMessageBrokerConfigurationBuilder, RabbitMQConfigurationBuilder>();
 
             // Add RabbitMQProducer and RabbitMQConsumer classes
-            builder.Services.AddScoped(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
-            builder.Services.AddScoped(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
+            //builder.Services.AddScoped(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
+            //builder.Services.AddScoped(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
+            builder.Services.AddScoped(typeof(IMessageProducer<>), typeof(KafkaProducer<>));
+            builder.Services.AddScoped(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
 
             // Add main service of this microservice
             // Reads from queue -> Add some informations -> Publish to Queue

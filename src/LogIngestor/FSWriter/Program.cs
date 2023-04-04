@@ -50,7 +50,8 @@ namespace FSWriter
 
             //// Add classes to use to pub/sub from external queues
             //builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
-            builder.Services.AddSingleton(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
+            //builder.Services.AddSingleton(typeof(IMessageConsumer<>), typeof(RabbitMQConsumer<>));
+            builder.Services.AddSingleton(typeof(IMessageConsumer<>), typeof(KafkaConsumer<>));
             builder.Services.AddSingleton(typeof(IFileWriter<>), typeof(FileStreamWriter<>));
 
 
