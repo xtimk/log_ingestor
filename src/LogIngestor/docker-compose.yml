@@ -82,13 +82,12 @@ services:
       - 8080:8080
     environment:
       - DYNAMIC_CONFIG_ENABLED=true
-    #volumes:
-    #  #- ~/kui/config.yml:/etc/kafkaui/dynamic_config.yaml
+    volumes:
+      - ~/kui/config.yaml:/etc/kafkaui/dynamic_config.yaml
     #  - kuiconfig:/etc/kafkaui/dynamic_config.yaml
 
 volumes:
   filesystem-storage:
-  kuiconfig:
   zookeeper_data:
     driver: local
   kafka_data:
@@ -109,3 +108,4 @@ volumes:
   #      - '15672:15672'
   #  #networks:
   #  # - logingestor-net
+
