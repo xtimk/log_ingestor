@@ -7,7 +7,7 @@ namespace FSWriter.Services.MetricsService.Impl
         private readonly ILogger<MetricsService> _logger;
 
         private Meter _meter;
-        private readonly string _meterName = "app";
+        private readonly string _meterName = "logingestor";
         private Dictionary<string, Counter<int>> _trackedGuids;
 
         public MetricsService(ILogger<MetricsService> logger)
