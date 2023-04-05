@@ -5,7 +5,7 @@ global:
 rule_files:
 
 scrape_configs:
-  - job_name: services
+  - job_name: Prometheus
     metrics_path: /metrics
     static_configs:
       - targets: ['prometheus:9090']
@@ -15,9 +15,15 @@ scrape_configs:
       insecure_skip_verify: true
     static_configs:
       - targets: ['agent:443']
-  - job_name: 'BaseEnricher'
+  - job_name: 'Base-Enricher'
     scheme: https
     tls_config:
       insecure_skip_verify: true
     static_configs:
       - targets: ['baseenricher:443']
+  - job_name: 'Filesystem-Writer'
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets: ['fswriter:443']

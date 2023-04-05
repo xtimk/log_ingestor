@@ -1,6 +1,6 @@
 ﻿using FSWriter.Services.JsonSerializer;
 using Confluent.Kafka;
-using System.Diagnostics.Metrics;
+using FSWriter.Services.MetricsService;
 
 namespace FSWriter.Services.MessageService.Impl
 {
@@ -8,13 +8,19 @@ namespace FSWriter.Services.MessageService.Impl
     {
         private readonly ILogger<KafkaProducer<T>> _logger;
         private readonly IJsonSerializer<T> _jsonSerializer;
+        private readonly IMetricsService _metricsService;
+        private readonly Guid _service_guid;
+        private readonly string _baseLogMessage;
         private ProducerConfig _config;
         private IProducer<Null, string> _producerBuilder;
         private int counter = 0;
-        public KafkaProducer(ILogger<KafkaProducer<T>> logger, IJsonSerializer<T> jsonSerializer)
+        public KafkaProducer(ILogger<KafkaProducer<T>> logger, IJsonSerializer<T> jsonSerializer, IMetricsService metricsService)
         {
             _logger = logger;
             _jsonSerializer = jsonSerializer;
+            _metricsService = metricsService;
+            _service_guid = Guid.NewGuid();
+            _baseLogMessage = $"Kafka Producer[{_service_guid}]: ";
         }
 
         public void Configure(string hostname, int port)
@@ -34,12 +40,12 @@ namespace FSWriter.Services.MessageService.Impl
                     _producerBuilder.Produce(topic, new Message<Null, string> { Value = serializedMessage });
                 }
                 counter += messageList.Count;
-                _logger.LogInformation($"Delivered batch of {messageList.Count} messages. Total {counter}");
+                _logger.LogInformation($"{_baseLogMessage}Delivered batch of {messageList.Count} messages. Total {counter}");
                 _producerBuilder.Flush();
             }
             catch (ProduceException<Null, string> e)
             {
-                _logger.LogError($"Delivery failed: {e.Error.Reason}");
+                _logger.LogError($"{_baseLogMessage}Delivery failed: {e.Error.Reason}");
             }
         }
 
@@ -49,10 +55,11 @@ namespace FSWriter.Services.MessageService.Impl
             {
                 var serializedMessage = _jsonSerializer.Serialize(message);
                 _producerBuilder.Produce(topic, new Message<Null, string> { Value = serializedMessage });
+                _metricsService.SignalNewEvent(_service_guid.ToString(), "main.service.out");
             }
             catch (ProduceException<Null, string> e)
             {
-                _logger.LogError($"Delivery failed: {e.Error.Reason}");
+                _logger.LogError($"{_baseLogMessage} Delivery failed: {e.Error.Reason}");
             }
             return true;
         }

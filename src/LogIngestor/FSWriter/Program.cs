@@ -10,7 +10,10 @@ using FSWriter.Services.MessageBackgroundProcessor;
 using FSWriter.Services.MessageBrokerConfigurationBuilder.Impl;
 using FSWriter.Services.MessageService;
 using FSWriter.Services.MessageService.Impl;
+using FSWriter.Services.MetricsService;
+using FSWriter.Services.MetricsService.Impl;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 using Serilog;
 
 namespace FSWriter
@@ -41,10 +44,12 @@ namespace FSWriter
 
             builder.Services.AddSingleton<IDateTimeNowProvider, DateTimeNowProvider>();
 
+            builder.Services.AddSingleton<IMetricsService, MetricsService>();
+
             builder.Services.AddSingleton(typeof(IJsonSerializer<>), typeof(SystemTextJsonSerializer<>));
 
             builder.Services.AddSingleton<IMessageProcessorBackground, MessageProcessor>();
-            builder.Services.AddHostedService(sp => sp.GetRequiredService<IMessageProcessorBackground>());
+            //builder.Services.AddHostedService(sp => sp.GetRequiredService<IMessageProcessorBackground>());
 
             ConfigureMessageBrokerConfigurations(builder);
 
@@ -58,6 +63,7 @@ namespace FSWriter
             var app = builder.Build();
 
             ConfigureMessageProcessorBackground(app);
+            StartMessageProcessorBackground(app);
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -70,6 +76,8 @@ namespace FSWriter
 
             app.UseAuthorization();
 
+            app.UseMetricServer();
+            app.UseHttpMetrics();
 
             app.MapControllers();
 
@@ -97,6 +105,11 @@ namespace FSWriter
             var messageProcessor = app.Services.GetRequiredService<IMessageProcessorBackground>();
             messageProcessor.Configure(inMessageBrokerConf, outStorageFsConf);
         }
-
+        private static void StartMessageProcessorBackground(WebApplication app)
+        {
+            var backGroundJob = app.Services.GetRequiredService<IMessageProcessorBackground>();
+            CancellationToken tkn = new CancellationToken();
+            Task.Run(() => backGroundJob.StartAsync(tkn));
+        }
     }
 }

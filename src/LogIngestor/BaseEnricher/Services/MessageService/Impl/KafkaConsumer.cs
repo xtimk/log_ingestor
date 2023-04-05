@@ -1,4 +1,5 @@
 ﻿using BaseEnricher.Services.JsonSerializer;
+using BaseEnricher.Services.MetricsService;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 
@@ -8,15 +9,21 @@ namespace BaseEnricher.Services.MessageService.Impl
     {
         private readonly ILogger<KafkaConsumer<T>> _logger;
         private readonly IJsonSerializer<T> _jsonSerializer;
+        private readonly IMetricsService _metricsService;
+        private readonly Guid _service_guid;
+        private string _baseLogMessage;
         private ConsumerConfig _config;
         private IConsumer<Null, string> _consumer;
         private bool _cancelled = false;
 
         public event EventHandler<T> OnMessageReceived;
-        public KafkaConsumer(ILogger<KafkaConsumer<T>> logger, IJsonSerializer<T> jsonSerializer)
+        public KafkaConsumer(ILogger<KafkaConsumer<T>> logger, IJsonSerializer<T> jsonSerializer, IMetricsService metricsService)
         {
             _logger = logger;
             _jsonSerializer = jsonSerializer;
+            _metricsService = metricsService;
+            _service_guid = Guid.NewGuid();
+            _baseLogMessage = $"Kafka Producer[{_service_guid}]: ";
         }
 
 
@@ -81,6 +88,7 @@ namespace BaseEnricher.Services.MessageService.Impl
                     throw new Exception("deserialized message is null");
                 }
                 OnMessageReceived?.Invoke(this, deserializedMessage);
+                _metricsService.SignalNewEvent(_service_guid.ToString(), "main.service.in");
             }
             _consumer.Close();
         }

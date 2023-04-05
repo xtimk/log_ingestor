@@ -1,4 +1,5 @@
 ﻿using Agent.Services.JsonSerializer;
+using Agent.Services.MetricsService;
 using Confluent.Kafka;
 
 namespace Agent.Services.MessageService.Impl
@@ -7,21 +8,23 @@ namespace Agent.Services.MessageService.Impl
     {
         private readonly ILogger<KafkaProducer<T>> _logger;
         private readonly IJsonSerializer<T> _jsonSerializer;
+        private readonly IMetricsService _metricsService;
         private ProducerConfig _config;
         private IProducer<Null, string> _producerBuilder;
         private int counter = 0;
-        private Guid _consumer_guid;
+        private Guid _service_guid;
         private string _baseLogMessage;
 
         public event Action<string> OnPublish;
 
-        public KafkaProducer(ILogger<KafkaProducer<T>> logger, IJsonSerializer<T> jsonSerializer)
+        public KafkaProducer(ILogger<KafkaProducer<T>> logger, IJsonSerializer<T> jsonSerializer, IMetricsService metricsService)
         {
             _logger = logger;
             _jsonSerializer = jsonSerializer;
-            _consumer_guid = Guid.NewGuid();
-            _baseLogMessage = $"Kafka Producer[{_consumer_guid}]: ";
-            _logger.LogInformation($"{_baseLogMessage}Created. Unique id: {_consumer_guid}");
+            _metricsService = metricsService;
+            _service_guid = Guid.NewGuid();
+            _baseLogMessage = $"Kafka Producer[{_service_guid}]: ";
+            _logger.LogInformation($"{_baseLogMessage}Created. Unique id: {_service_guid}");
         }
 
         public void Configure(string hostname, string port)
@@ -65,7 +68,8 @@ namespace Agent.Services.MessageService.Impl
                 _logger.LogError($"{_baseLogMessage}Delivery failed: {e.Error.Reason}");
             }
 
-            OnPublish?.Invoke(_consumer_guid.ToString());
+            OnPublish?.Invoke(_service_guid.ToString());
+            _metricsService.SignalNewEvent(_service_guid.ToString(), "main.service.out");
             return true;
         }
     }

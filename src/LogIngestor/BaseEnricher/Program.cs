@@ -9,7 +9,10 @@ using BaseEnricher.Services.MessageBrokerConfigurationBuilder.Impl;
 using BaseEnricher.Services.MessageProcessor.Commands;
 using BaseEnricher.Services.MessageService;
 using BaseEnricher.Services.MessageService.Impl;
+using BaseEnricher.Services.MetricsService;
+using BaseEnricher.Services.MetricsService.Impl;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 using Serilog;
 
 namespace BaseEnricher
@@ -42,6 +45,8 @@ namespace BaseEnricher
             // Add singleton that provides current time. This is needed in order to unit test things correctly
             builder.Services.AddSingleton<IDateTimeNowProvider, DateTimeNowProvider>();
 
+            builder.Services.AddSingleton<IMetricsService, MetricsService>();
+
             builder.Services.AddSingleton(typeof(IJsonSerializer<>), typeof(SystemTextJsonSerializer<>));
 
             // Add singletons containing IMessageBrokerConfigurations for the producer and the consumer
@@ -58,18 +63,19 @@ namespace BaseEnricher
 
             // Add main service of this microservice
             // Reads from queue -> Add some informations -> Publish to Queue
-            builder.Services.AddSingleton<IMessageProcessorBackground, MessageProcessor>();            
-            builder.Services.AddHostedService(sp => sp.GetRequiredService<IMessageProcessorBackground>());
+            builder.Services.AddSingleton<IMessageProcessorBackground, MessageProcessor>();
+            //builder.Services.AddHostedService(sp => sp.GetRequiredService<IMessageProcessorBackground>());
 
             var app = builder.Build();
 
             // Configure the main service of this microservice
             ConfigureMessageProcessorBackground(app);
+            StartMessageProcessorBackground(app);
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.UseDeveloperExceptionPage();
+                //app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
@@ -77,6 +83,9 @@ namespace BaseEnricher
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
+
+            app.UseMetricServer();
+            app.UseHttpMetrics();
 
             app.MapControllers();
 
@@ -106,6 +115,13 @@ namespace BaseEnricher
             var outMessageBrokerConf = app.Services.GetRequiredService<IMessageBrokerSingletonConfiguration<RabbitMQProducerConfiguration>>();
             var messageProcessor = app.Services.GetRequiredService<IMessageProcessorBackground>();
             messageProcessor.Configure(inMessageBrokerConf, outMessageBrokerConf);
+        }
+
+        private static void StartMessageProcessorBackground(WebApplication app)
+        {
+            var backGroundJob = app.Services.GetRequiredService<IMessageProcessorBackground>();
+            CancellationToken tkn = new CancellationToken();
+            Task.Run(() => backGroundJob.StartAsync(tkn));
         }
     }
 }

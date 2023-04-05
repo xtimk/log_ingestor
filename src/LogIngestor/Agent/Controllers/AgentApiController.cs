@@ -81,8 +81,8 @@ namespace Agent.Controllers
 
         private void WriteMetrics(string name)
         {
-            _metricsService.SignalNewEvent(name, "fake-reader");
-            _metricsService.SignalNewEvent("total-sent-events", "");
+            //_metricsService.SignalNewEvent("fake-guid", "fake-reader");
+            //_metricsService.SignalNewEvent("a-guid", "agent.out");
         }
     }
 }

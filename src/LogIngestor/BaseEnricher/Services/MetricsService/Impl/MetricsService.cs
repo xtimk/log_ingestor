@@ -1,7 +1,7 @@
 ﻿using Prometheus;
 using System.Diagnostics.Metrics;
 
-namespace Agent.Services.MetricsService.Impl
+namespace BaseEnricher.Services.MetricsService.Impl
 {
     public class MetricsService : IMetricsService
     {

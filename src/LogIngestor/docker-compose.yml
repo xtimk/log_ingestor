@@ -99,6 +99,8 @@ services:
     #  - kuiconfig:/etc/kafkaui/dynamic_config.yaml
     networks:
       - "logingestor-net"
+    depends_on:
+      - "kafka"
 
   prometheus:
     image: prom/prometheus

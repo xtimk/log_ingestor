@@ -1,7 +1,6 @@
-﻿using Prometheus;
-using System.Diagnostics.Metrics;
+﻿using System.Diagnostics.Metrics;
 
-namespace Agent.Services.MetricsService.Impl
+namespace FSWriter.Services.MetricsService.Impl
 {
     public class MetricsService : IMetricsService
     {
