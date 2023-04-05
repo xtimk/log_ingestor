@@ -18,7 +18,7 @@ namespace Agent.Services.Readers.Objects.Impl
 
         public void Start(Guid guid)
         {
-            var millisecondsToRun = 60000;
+            var millisecondsToRun = 10*60000;
             _guid = guid;
             _running = true;
             Task.Run(() => { Thread.Sleep(millisecondsToRun); _running = false; });

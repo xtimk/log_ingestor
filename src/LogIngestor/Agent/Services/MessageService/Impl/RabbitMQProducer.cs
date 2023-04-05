@@ -16,6 +16,7 @@ namespace Agent.Services.MessageService.Impl
         private IConnection _connection;
         private IModel _channel;
 
+        public event Action OnPublish;
 
         public RabbitMQProducer(ILogger<RabbitMQProducer<T>> logger, IJsonSerializer<T> jsonSerializer)
         {
@@ -24,6 +25,19 @@ namespace Agent.Services.MessageService.Impl
             _consumer_guid = Guid.NewGuid();
             _baseLogMessage = $"RabbitMQ Producer[{_consumer_guid}]: ";
             _logger.LogInformation($"{_baseLogMessage}Created. Unique id: {_consumer_guid}");
+        }
+
+        event Action<string> IMessageProducer<T>.OnPublish
+        {
+            add
+            {
+                throw new NotImplementedException();
+            }
+
+            remove
+            {
+                throw new NotImplementedException();
+            }
         }
 
         public void Configure(string hostname, string? port)

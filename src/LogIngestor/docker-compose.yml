@@ -21,6 +21,10 @@ services:
       - OutBrokerTopic=enriched_message_queue
     depends_on:
       - "kafka"
+    ports:
+     - 60000:443
+    networks:
+      - "logingestor-net"
 
   fswriter:
     image: ${DOCKER_REGISTRY-}fswriter
@@ -41,6 +45,8 @@ services:
      - InBrokerPort=9092
      - InBrokerTopic=enriched_message_queue
      - StoragePathInContainer=/usr/share/log-ingestor/data
+    networks:
+      - "logingestor-net"
 
   agent:
     image: ${DOCKER_REGISTRY-}agent
@@ -53,6 +59,8 @@ services:
       - OutBrokerHostname=kafka
       - OutBrokerPort=9092
       - OutBrokerTopic=base_message_queue
+    networks:
+      - "logingestor-net"
 
   zookeeper:
     image: docker.io/bitnami/zookeeper:latest
@@ -62,6 +70,8 @@ services:
       - "zookeeper_data:/bitnami"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - "logingestor-net"
 
   kafka:
     image: docker.io/bitnami/kafka:latest
@@ -74,6 +84,8 @@ services:
       - ALLOW_PLAINTEXT_LISTENER=yes
     depends_on:
       - zookeeper
+    networks:
+      - "logingestor-net"
 
   kafka-ui:
     container_name: kafka-ui
@@ -85,6 +97,39 @@ services:
     volumes:
       - ~/kui/config.yaml:/etc/kafkaui/dynamic_config.yaml
     #  - kuiconfig:/etc/kafkaui/dynamic_config.yaml
+    networks:
+      - "logingestor-net"
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prom_data:/prometheus
+    networks:
+      - "logingestor-net"
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/datasources
+    networks:
+      - "logingestor-net"
+
+networks:
+  logingestor-net:
 
 volumes:
   filesystem-storage:
@@ -92,6 +137,7 @@ volumes:
     driver: local
   kafka_data:
     driver: local
+  prom_data:
 
 
   #rabbitmq.allinone.local:

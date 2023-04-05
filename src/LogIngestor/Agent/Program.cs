@@ -6,9 +6,12 @@ using Agent.Services.JsonSerializer;
 using Agent.Services.JsonSerializer.Impl;
 using Agent.Services.MessageService;
 using Agent.Services.MessageService.Impl;
+using Agent.Services.MetricsService;
+using Agent.Services.MetricsService.Impl;
 using Agent.Services.Readers.Objects;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Prometheus;
 using Serilog;
 
 namespace Agent
@@ -28,7 +31,6 @@ namespace Agent
             builder.Logging.AddSerilog(logger);
 
             // Add services to the container.
-
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
@@ -41,6 +43,8 @@ namespace Agent
             builder.Services.AddSingleton<Dictionary<Guid, IReader>>();
 
             builder.Services.AddSingleton<IGuidProvider, GuidProvider>();
+
+            builder.Services.AddSingleton<IMetricsService, MetricsService>();
 
             //builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(RabbitMQProducer<>));
             builder.Services.AddSingleton(typeof(IMessageProducer<>), typeof(KafkaProducer<>));
@@ -64,10 +68,12 @@ namespace Agent
                 app.UseSwaggerUI();
             }
 
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection();
 
             app.UseAuthorization();
 
+            app.UseMetricServer();
+            app.UseHttpMetrics();
 
             app.MapControllers();
 

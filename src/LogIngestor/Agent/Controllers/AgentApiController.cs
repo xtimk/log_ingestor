@@ -2,6 +2,7 @@
 using Agent.Models;
 using Agent.Services.GuidProvider;
 using Agent.Services.MessageService;
+using Agent.Services.MetricsService;
 using Agent.Services.Readers.Factory.Impl;
 using Agent.Services.Readers.Objects;
 using Microsoft.AspNetCore.Mvc;
@@ -19,6 +20,7 @@ namespace Agent.Controllers
         private readonly IOptions<LogIngestorServer> _logIngestorServer;
         private readonly Dictionary<Guid, IReader> _activeReaders;
         private readonly IGuidProvider _guidProvider;
+        private readonly IMetricsService _metricsService;
         private readonly IServiceProvider _serviceProvider;
 
         public AgentApiController(
@@ -27,6 +29,7 @@ namespace Agent.Controllers
                 IOptions<LogIngestorServer> logIngestorServer,
                 Dictionary<Guid, IReader> activeReaders,
                 IGuidProvider guidProvider,
+                IMetricsService metricsService,
                 IServiceProvider serviceProvider)
         {
             _logger = logger;
@@ -34,7 +37,10 @@ namespace Agent.Controllers
             _logIngestorServer = logIngestorServer;
             _activeReaders = activeReaders;
             _guidProvider = guidProvider;
+            _metricsService = metricsService;
             _serviceProvider = serviceProvider;
+
+            _messageProducer.OnPublish += WriteMetrics;
         }
 
         [HttpGet]
@@ -71,6 +77,12 @@ namespace Agent.Controllers
             {
                 _messageProducer.Publish(_logIngestorServer.Value.Topic, item);
             }
+        }
+
+        private void WriteMetrics(string name)
+        {
+            _metricsService.SignalNewEvent(name, "fake-reader");
+            _metricsService.SignalNewEvent("total-sent-events", "");
         }
     }
 }
