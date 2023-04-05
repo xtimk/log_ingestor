@@ -5,11 +5,18 @@ I created this project mainly to practise with microservices/distributed archite
 
 For microservice comunication it's used the pub/sub pattern, with a message broker/queue. The message broker implementation is abstracted: for now the supported message brokers are `RabbitMQ` and `Kafka`, but this list can be relatively easily extended.
 
+All microservices expose the endpoint /metrics that can be polled by prometheus. In particular two metrics are exposed
+
+ - `logingestor_main_service_in`: tracks the number of events entering the microservice
+ - `logingestor_main_service_in`: tracks the number of events exiting the microservice
+
+These metrics can be used with grafana in combination with `rate` to get the events per second entering and exiting all microservices.
+
 ## Build & Test Status
 |Microservice|Status
 |-|-|
-|BaseEnricher|[![base-enricher](https://github.com/xtimk/log_ingestor/actions/workflows/baseenricher.yml/badge.svg?branch=main&event=push)](https://github.com/xtimk/log_ingestor/actions/workflows/baseenricher.yml)
-|FSWriter|[![fs-writer](https://github.com/xtimk/log_ingestor/actions/workflows/fs-writer.yml/badge.svg?branch=main&event=push)](https://github.com/xtimk/log_ingestor/actions/workflows/fs-writer.yml)
+|Message Enricher|[![base-enricher](https://github.com/xtimk/log_ingestor/actions/workflows/baseenricher.yml/badge.svg?branch=main&event=push)](https://github.com/xtimk/log_ingestor/actions/workflows/baseenricher.yml)
+|Filesystem Writer|[![fs-writer](https://github.com/xtimk/log_ingestor/actions/workflows/fs-writer.yml/badge.svg?branch=main&event=push)](https://github.com/xtimk/log_ingestor/actions/workflows/fs-writer.yml)
 |Agent|[![agent](https://github.com/xtimk/log_ingestor/actions/workflows/agent.yml/badge.svg?branch=main&event=push)](https://github.com/xtimk/log_ingestor/actions/workflows/agent.yml)
 
 *Microservices are build and tested using .NET Core 6.0.401 on Ubuntu, Windows, MacOS*
