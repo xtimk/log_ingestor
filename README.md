@@ -5,7 +5,7 @@ I created this project mainly to practise with microservices/distributed archite
 
 For microservice comunication it's used the pub/sub pattern, with a message broker/queue. The message broker implementation is abstracted: for now the supported message brokers are `RabbitMQ` and `Kafka`, but this list can be relatively easily extended.
 
-All microservices expose the endpoint /metrics that can be polled by prometheus. In particular two metrics are exposed
+All microservices expose the endpoint /metrics that can be polled by `prometheus`. In particular two metrics are exposed
 
  - `logingestor_main_service_in`: tracks the number of events entering the microservice
  - `logingestor_main_service_in`: tracks the number of events exiting the microservice
