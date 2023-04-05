@@ -11,6 +11,7 @@ using System;
 using Microsoft.Extensions.DependencyInjection;
 using Agent.Services.GuidProvider;
 using Agent.Services.GuidProvider.Impl;
+using Agent.Services.MetricsService;
 
 namespace Agent.UnitTests.Api
 {
@@ -21,6 +22,7 @@ namespace Agent.UnitTests.Api
         private Mock<IOptions<LogIngestorServer>> logIngestorServer;
         private Mock<Dictionary<Guid, IReader>> activeReaders;
         private Mock<IGuidProvider> guidProvider;
+        private Mock<IMetricsService> metricsService;
         private Mock<IServiceProvider> serviceProvider;
 
         [SetUp]
@@ -31,6 +33,7 @@ namespace Agent.UnitTests.Api
             logIngestorServer = new Mock<IOptions<LogIngestorServer>>();
             activeReaders = new Mock<Dictionary<Guid, IReader>>();
             guidProvider = new Mock<IGuidProvider>();
+            metricsService = new Mock<IMetricsService>();
             serviceProvider = new Mock<IServiceProvider>();
         }
 
@@ -42,7 +45,7 @@ namespace Agent.UnitTests.Api
             var buildedServices = services.BuildServiceProvider();
             var fakeGuid = new Guid("e56ad0c4-d339-4d98-b384-e5ab4d22034c");
             guidProvider.Setup(x => x.Create()).Returns(fakeGuid);
-            var apiController = new AgentApiController(logger.Object, messageProducer.Object, logIngestorServer.Object, activeReaders.Object, guidProvider.Object, buildedServices);
+            var apiController = new AgentApiController(logger.Object, messageProducer.Object, logIngestorServer.Object, activeReaders.Object, guidProvider.Object, metricsService.Object, buildedServices);
             
             var returnValue = apiController.StartFakeReader();
 
