@@ -10,7 +10,13 @@ All microservices expose the endpoint /metrics that can be polled by prometheus.
  - `logingestor_main_service_in`: tracks the number of events entering the microservice
  - `logingestor_main_service_in`: tracks the number of events exiting the microservice
 
-These metrics can be used with grafana in combination with `rate` to get the events per second entering and exiting all microservices.
+These metrics can be used with `grafana` in combination with `rate` to get the events per second entering and exiting all microservices.
+
+You can select either the container instance..
+![you can select either the container instance](https://github.com/xtimk/log_ingestor/blob/main/images/grafana-metrics-instance.png)
+
+..or the job configured in prometheus
+![](https://github.com/xtimk/log_ingestor/blob/main/images/grafana-metrics-job.png)
 
 ## Build & Test Status
 |Microservice|Status
