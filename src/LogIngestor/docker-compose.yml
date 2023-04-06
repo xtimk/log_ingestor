@@ -95,7 +95,7 @@ services:
     environment:
       - DYNAMIC_CONFIG_ENABLED=true
     volumes:
-      - ~/kui/config.yaml:/etc/kafkaui/dynamic_config.yaml
+      - ./kui/config.yaml:/etc/kafkaui/dynamic_config.yaml
     #  - kuiconfig:/etc/kafkaui/dynamic_config.yaml
     networks:
       - "logingestor-net"
